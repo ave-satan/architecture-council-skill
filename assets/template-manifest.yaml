@@ -1,4 +1,4 @@
-version: 1.2.5
+version: 1.2.6
 protocol: ../references/protocol.md
 
 artifact_language:
@@ -33,8 +33,6 @@ required_for_l1:
   - feature-package/human-review.md
   - feature-package/implementation-handoff.md
   - feature-package/evidence/package-validation.md
-  - feature-package/diagrams/target/container-view.mmd
-  - feature-package/diagrams/target/key-flow-sequence.mmd
 
 required_for_l2:
   - feature-package/README.md
@@ -56,12 +54,9 @@ required_for_l2:
   - feature-package/evidence/red-team-review.md
   - feature-package/evidence/arbiter-review.md
   - feature-package/evidence/package-validation.md
-  - feature-package/diagrams/target/container-view.mmd
-  - feature-package/diagrams/target/key-flow-sequence.mmd
 
 required_for_brownfield:
   - feature-package/current-system.md
-  - feature-package/diagrams/current/container-view.mmd
 
 required_for_greenfield:
   - feature-package/system-context.md
@@ -134,7 +129,7 @@ validation:
     - full_traceability_chain
     - artifact_language
     - readme_navigation_and_next_actions
-    - diagram_metadata_and_render
+    - inline_diagram_metadata
     - verbose_diagnostics
   design_run_required_value:
     implementation_start: NOT_REQUESTED

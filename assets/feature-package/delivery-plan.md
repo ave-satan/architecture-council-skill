@@ -17,6 +17,13 @@ updated_at: "{{YYYY-MM-DD}}"
 ## Обзор зависимостей
 
 ```mermaid
+%% ac_id: delivery-dependencies
+%% ac_state: transition
+%% ac_purpose: зависимости инкрементов поставки
+%% ac_scope: {{SCOPE}}
+%% ac_legend: стрелка означает зависимость
+%% ac_revision: {{REVISION}}
+%% ac_normative: delivery-plan.md
 flowchart LR
     INC001[INC-001] --> INC002[INC-002]
     INC001 --> INC003[INC-003]

@@ -1,4 +1,4 @@
-# Контракт Architecture Package v1.2.5
+# Контракт Architecture Package v1.2.6
 
 Этот контракт определяет только структуру проверяемых связей. Смысл требований,
 истинность evidence, реальность человеческого разрешения и качество решения
@@ -117,10 +117,24 @@ Claim ID, Repo-relative path, Revision, Start, End. `repository_root` указы
 диапазон строк. Для исследования без code claims допустима пустая таблица с
 `code_evidence_status: NOT_APPLICABLE` и `code_evidence_reason` в metadata.
 
-Metadata Mermaid: `%% ac_state:`, `ac_purpose`, `ac_scope`, `ac_legend`,
-`ac_revision`, `ac_normative`. Ключи не переводятся, значения переводятся кроме
-revision, state и путей. Revision актуальна, нормативная ссылка разрешима.
-Синтаксис Mermaid и визуальная корректность остаются отдельной проверкой.
+Mermaid находится внутри fenced-блоков `mermaid` в Markdown. Комментарии
+`%% ac_id:`, `ac_state`, `ac_purpose`, `ac_scope`, `ac_legend`, `ac_revision`,
+`ac_normative` задают идентичность и metadata. `ac_id` уникален в документе;
+ссылка ac_normative разрешается относительно Markdown-файла, может указывать
+на него самого. Revision совпадает с текущим пакетом.
+
+В target-architecture.md обязательны `target-container` и `key-flow`; в brownfield
+в current-system.md — `current-container`. Другие схемы добавляются по необходимости.
+Валидатор проверяет наличие блоков, закрытие fences, непустое тело, IDs, metadata
+и ссылки. Он не исполняет Mermaid и не доказывает корректность синтаксиса/раскладки.
+Редактор пользователя с Mermaid-плагином считается доступным; отдельные render
+и визуальный gate не нужны. Отсутствие SVG/PNG не создаёт warning.
+
+Старые пакеты с diagrams/target/container-view.mmd, key-flow-sequence.mmd и
+brownfield diagrams/current/container-view.mmd поддерживаются без обязательного
+рендера. При изменении такой схемы перенеси её в связанный Markdown с ac_id и
+обнови ссылки; не сохраняй две активные копии одной схемы. Старый флаг
+--allow-missing-render оставлен для совместимости команд и ссылок старых пакетов.
 
 ## Verbose и готовность
 

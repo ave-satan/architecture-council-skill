@@ -22,9 +22,26 @@ observed_at: "{{YYYY-MM-DD}}"
 
 ## Текущая архитектура в одном взгляде
 
-![Текущая архитектура](diagrams/rendered/current-container-view.svg)
+```mermaid
+%% ac_id: current-container
+%% ac_state: current
+%% ac_purpose: показать релевантные фиче текущие компоненты и связи
+%% ac_scope: {{SCOPE}}
+%% ac_legend: сплошная стрелка — синхронная или обязательная связь
+%% ac_revision: {{REVISION}}
+%% ac_normative: current-system.md
+flowchart LR
+    User[{{ACTOR}}]
+    UI[{{CURRENT_UI_OR_CLIENT}}]
+    API[{{CURRENT_API}}]
+    DB[({{CURRENT_SYSTEM_OF_RECORD}})]
+    External[{{EXTERNAL_SYSTEM}}]
 
-Исходник: [current/container-view.mmd](diagrams/current/container-view.mmd).
+    User --> UI
+    UI --> API
+    API --> DB
+    API --> External
+```
 
 ## Текущий end-to-end flow
 

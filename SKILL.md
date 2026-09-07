@@ -195,9 +195,12 @@ revision-linked decisions/history, and explain only material changes in chat.
 - Distinguish facts, inferences, assumptions, recommendations, and unknowns.
 - Give every unresolved risk, assumption, condition, or blocker an owner and a
   verification or decision path.
-- Make diagram metadata and architecture revision explicit. Render diagrams when
-  supported and perform visual inspection; source validation alone is not visual
-  confirmation.
+- Put Mermaid diagrams inline in fenced `mermaid` blocks in the relevant Markdown
+  document. Keep diagram metadata and architecture revision inside the block.
+  Assume the user's editor renders Mermaid through its plugin; do not require
+  separate .mmd files, SVG/PNG export, screenshots, or a renderer installation.
+  Lack of preview in this session is not a gate or evidence gap. Report actual
+  syntax/content problems if found; do not claim a visual check you did not do.
 - Never turn `NO-GO`, `BLOCKED`, or `REWORK_REQUIRED` into a conditional pass.
 - Do not treat two variants inside one unchallenged technical frame as adequate
   solution-space coverage.
@@ -228,8 +231,9 @@ readiness for handoff. A documented waiver produces a warning, not fake
 independence. If log projection diverges, use `log_event.py PACKAGE
 --rebuild-markdown` without appending the event again.
 
-Resolve validation errors. Record warnings, evidence gaps, and any unavailable
-visual checks honestly in `evidence/package-validation.md`.
+Resolve validation errors. Record warnings and actual evidence gaps honestly in
+`evidence/package-validation.md`. Native editor rendering of inline Mermaid is
+the assumed display path, not an additional verification task for the user.
 
 ## Finish the design run
 

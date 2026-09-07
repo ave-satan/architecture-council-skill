@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Создаёт Architecture Package Protocol v1.2.5 из ресурсов локального skill."""
+"""Создаёт Architecture Package Protocol v1.2.6 из ресурсов локального skill."""
 
 from __future__ import annotations
 
@@ -140,8 +140,6 @@ def copy_file(source: Path, destination: Path) -> None:
 def copy_support_files(target: Path, level: str, context: str) -> None:
     support = [
         Path("adr/ADR-NNN-template.md"),
-        Path("diagrams/README.md"),
-        Path("diagrams/rendered/README.md"),
         Path("evidence/benchmark.template.md"),
         Path("evidence/conflict.template.md"),
         Path("evidence/human-decision-request.template.md"),
@@ -153,15 +151,8 @@ def copy_support_files(target: Path, level: str, context: str) -> None:
     support.append(
         Path("current-system.md") if context == "brownfield" else Path("system-context.md")
     )
-    if context == "brownfield":
-        support.append(Path("diagrams/current/container-view.mmd"))
-    if level in {"L2", "L3"}:
-        support.append(Path("diagrams/target/state-machine.mmd"))
-    if level == "L3":
-        support.append(Path("diagrams/evolution/migration-stages.mmd"))
     for relative in support:
         copy_file(TEMPLATE_ROOT / relative, target / relative)
-    (target / "diagrams" / "evolution").mkdir(parents=True, exist_ok=True)
 
 
 def substitute_known_values(
@@ -360,14 +351,14 @@ def main() -> int:
     print(f"Architecture Package создан: {target}")
     print(f"Уровень/контекст: {args.level}/{args.context}; язык: {args.language}")
     print(f"Выбранные роли: {', '.join(roles) if roles else 'нет дополнительных ролей'}")
-    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.5.")
+    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.6.")
     if args.verbose:
         print("Диагностика: VERBOSE; события добавляет только Council Orchestrator через log_event.py.")
     print(
         "Проверка шаблона: "
         f"python3 {shlex.quote(str(validator))} {shlex.quote(str(target))} --level {args.level} "
         f"--context {args.context} --language {args.language}{role_arg} "
-        "--template-mode --allow-missing-render"
+        "--template-mode"
         + (" --verbose" if args.verbose else "")
     )
     return 0

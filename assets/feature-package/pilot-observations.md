@@ -2,7 +2,7 @@
 architecture_revision: "{{REVISION}}"
 feature: "{{FEATURE_NAME}}"
 artifact: pilot_observations
-protocol_version: "1.2.5"
+protocol_version: "1.2.6"
 artifact_language: "{{USER_LANGUAGE}}"
 updated_at: "{{YYYY-MM-DD}}"
 ---

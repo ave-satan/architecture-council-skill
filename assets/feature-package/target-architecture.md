@@ -20,15 +20,57 @@ updated_at: "{{YYYY-MM-DD}}"
 
 ## Архитектура в одном взгляде
 
-![Целевая архитектура](diagrams/rendered/target-container-view.svg)
+```mermaid
+%% ac_id: target-container
+%% ac_state: target
+%% ac_purpose: обзор целевой архитектуры {{FEATURE_NAME}}
+%% ac_scope: {{SCOPE}}
+%% ac_legend: сплошная стрелка — синхронная или обязательная связь
+%% ac_revision: {{REVISION}}
+%% ac_normative: target-architecture.md
+flowchart LR
+    User[{{ACTOR}}]
+    UI[{{UI_OR_CLIENT}}]
+    API[{{API_COMPONENT}}]
+    Worker[{{WORKER_OR_SERVICE}}]
+    DB[({{SYSTEM_OF_RECORD}})]
+    External[{{EXTERNAL_SYSTEM_OR_STORAGE}}]
 
-Исходник: [target/container-view.mmd](diagrams/target/container-view.mmd).
+    User --> UI
+    UI --> API
+    API --> DB
+    Worker --> DB
+    Worker --> External
+```
 
 ## Ключевые end-to-end сценарии
 
 ### {{SCN_ID}}: {{NAME}}
 
-![Sequence](diagrams/rendered/key-flow-sequence.svg)
+```mermaid
+%% ac_id: key-flow
+%% ac_state: target
+%% ac_purpose: критический end-to-end сценарий {{SCN_ID}}
+%% ac_scope: {{SCOPE}}
+%% ac_legend: сплошная стрелка — запрос, пунктирная — ответ
+%% ac_revision: {{REVISION}}
+%% ac_normative: target-architecture.md
+sequenceDiagram
+    actor User as {{ACTOR}}
+    participant Client as {{CLIENT}}
+    participant API as {{API}}
+    participant Core as {{CORE_COMPONENT}}
+    participant Store as {{STORE_OR_EXTERNAL_SYSTEM}}
+
+    User->>Client: {{ACTION}}
+    Client->>API: {{REQUEST}}
+    API->>Core: {{COMMAND}}
+    Core->>Store: {{PERSIST_OR_CALL}}
+    Store-->>Core: {{RESULT}}
+    Core-->>API: {{RESULT}}
+    API-->>Client: {{OBSERVABLE_RESPONSE}}
+    Client-->>User: {{OUTCOME}}
+```
 
 1. {{STEP}}
 2. {{STEP}}
@@ -123,3 +165,22 @@ updated_at: "{{YYYY-MM-DD}}"
 | Ревизия | Дата | Trigger/findings | Изменения | Автор |
 |---|---|---|---|---|
 | {{REV}} | {{DATE}} | {{FINDING_IDS}} | {{SUMMARY}} | {{OWNER}} |
+
+## Состояния (при необходимости)
+
+```mermaid
+%% ac_id: target-state
+%% ac_state: target
+%% ac_purpose: жизненный цикл {{ENTITY}}
+%% ac_scope: {{SCOPE}}
+%% ac_legend: стрелка — допустимый переход, подпись — событие
+%% ac_revision: {{REVISION}}
+%% ac_normative: target-architecture.md
+stateDiagram-v2
+    [*] --> {{INITIAL_STATE}}
+    {{INITIAL_STATE}} --> {{ACTIVE_STATE}}: {{EVENT}}
+    {{ACTIVE_STATE}} --> {{SUCCESS_STATE}}: {{EVENT}}
+    {{ACTIVE_STATE}} --> {{FAILURE_STATE}}: {{EVENT}}
+    {{FAILURE_STATE}} --> {{ACTIVE_STATE}}: {{RETRY_EVENT}}
+    {{SUCCESS_STATE}} --> [*]
+```

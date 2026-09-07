@@ -133,8 +133,14 @@ PASS: requirements admit a simple local stream; no omitted transport is relevant
 |---|---|---|
 | OPT-001 | Stream local CSV | VIABLE |
 """,solution_space_coverage="PASS",missed_solution_family_status="NONE",coverage_challenger_run_id=f"RUN-{i:03}",coverage_challenger_actor_id=f"actor-{i}",coverage_input_revision="r1")
-    for path in package.glob("diagrams/**/*.mmd"):
-        path.write_text("%% ac_state: target\n%% ac_purpose: Local export\n%% ac_scope: Books\n%% ac_legend: Directed flow\n%% ac_revision: r1\n%% ac_normative: ../../target-architecture.md\nflowchart LR\nDatabase --> CSV\n")
+    diagrams = [('target-architecture.md', 'target-container', 'flowchart LR\nDatabase --> CSV'),
+                ('target-architecture.md', 'key-flow', 'sequenceDiagram\nUser->>Writer: Export')]
+    if context == 'brownfield':
+        diagrams.append(('current-system.md', 'current-container', 'flowchart LR\nDatabase --> Application'))
+    for name, identifier, body in diagrams:
+        path = package / name
+        state = 'current' if name == 'current-system.md' else 'target'
+        path.write_text(path.read_text() + f'\n```mermaid\n%% ac_id: {identifier}\n%% ac_state: {state}\n%% ac_purpose: Local export\n%% ac_scope: Books\n%% ac_legend: Directed flow\n%% ac_revision: r1\n%% ac_normative: {name}\n{body}\n```\n')
     if verbose and language == "en":
         path = package / "evidence/process-log.md"
         text = path.read_text()

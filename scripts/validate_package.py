@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Структурная проверка Architecture Package Protocol v1.2.5 без зависимостей."""
+"""Структурная проверка Architecture Package Protocol v1.2.6 без зависимостей."""
 
 from __future__ import annotations
 
@@ -199,7 +199,7 @@ def main() -> int:
         check_language(package, args.language, report, args.template_mode)
     check_links(package, report, args.template_mode or args.phase == "draft", args.allow_missing_render)
     check_verbose_diagnostics(package, flat, report, args.template_mode, args.verbose)
-    check_diagrams(package, report, args.allow_missing_render)
+    check_diagrams(package, report, args.allow_missing_render, args.context)
     if not args.template_mode:
         check_evidence_locations(package, args.context, report)
     if args.phase == "draft" or args.template_mode:

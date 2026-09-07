@@ -137,8 +137,44 @@ class PackageCLI(unittest.TestCase):
         self.assertIn("threat-model.md", self.validate(level="L3").stdout)
 
     def test_current_diagram_revision_is_checked(self):
-        self.replace("diagrams/target/container-view.mmd", "ac_revision: r1", "ac_revision: r0")
+        self.replace("target-architecture.md", "ac_revision: r1", "ac_revision: r0")
         self.assertRejected(self.validate(), "revision схемы не совпадает")
+
+    def test_inline_mermaid_needs_no_render_or_separate_directory(self):
+        self.assertFalse((self.package / 'diagrams').exists())
+        result = run('validate_package.py', self.package, '--level', 'L2', '--context', 'greenfield', '--language', 'en')
+        self.assertEqual(0, result.returncode, result.stdout)
+        self.assertIn('errors=0, warnings=0', result.stdout)
+
+    def test_missing_empty_unclosed_and_duplicate_mermaid_are_rejected(self):
+        p = self.package / 'target-architecture.md'; original = p.read_text()
+        changes = [
+            (lambda s: s.replace('ac_id: key-flow', 'ac_id: other'), 'отсутствует обязательная схема key-flow'),
+            (lambda s: s.replace('ac_id: key-flow', 'ac_id: target-container'), 'повторный ac_id'),
+            (lambda s: s.replace('flowchart LR\nDatabase --> CSV', ''), 'пустая схема'),
+            (lambda s: s.rsplit('```', 1)[0], 'незакрытый блок'),
+            (lambda s: s.replace('ac_normative: target-architecture.md', 'ac_normative: missing.md'), 'missing.md'),
+        ]
+        for change, diagnostic in changes:
+            with self.subTest(diagnostic=diagnostic):
+                p.write_text(change(original))
+                self.assertRejected(self.validate(), diagnostic)
+
+    def test_legacy_mermaid_sources_remain_valid_without_renders(self):
+        p = self.package / 'target-architecture.md'; text = p.read_text()
+        blocks = re.findall(r'```mermaid\n(.*?)```', text, re.S)
+        p.write_text(re.sub(r'```mermaid\n.*?```', '', text, flags=re.S))
+        folder = self.package / 'diagrams/target'; folder.mkdir(parents=True)
+        for name, body in zip(('container-view.mmd', 'key-flow-sequence.mmd'), blocks):
+            (folder / name).write_text(body.replace('ac_normative: target-architecture.md', 'ac_normative: ../../target-architecture.md'))
+        result = self.validate()
+        self.assertEqual(0, result.returncode, result.stdout)
+
+    def test_tilde_fences_and_nested_code_examples(self):
+        p = self.package / 'target-architecture.md'
+        p.write_text(p.read_text().replace('```', '~~~') + '\n````text\n```mermaid\nNot an actual diagram\n```\n````\n')
+        result = self.validate()
+        self.assertEqual(0, result.returncode, result.stdout)
 
     def test_real_anchors_and_line_ranges(self):
         path = self.package / "README.md"

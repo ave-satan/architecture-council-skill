@@ -433,23 +433,62 @@ def check_classification(package, level, context, roles, report, template_mode):
         report.error("Classification selected_roles не совпадают с ledger/CLI")
 
 
-def check_diagrams(package, report, allow_missing_render):
+def mermaid_blocks(text):
+    """Read fenced blocks, ignoring Mermaid examples inside other code fences."""
+    fence = None
+    body = []
+    for number, line in enumerate(text.splitlines(), 1):
+        if fence is None:
+            match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+            if match:
+                fence, language, start = match[1], match[2].strip(), number
+                body = []
+        elif re.fullmatch(r" {0,3}" + re.escape(fence[0]) + "{" + str(len(fence)) + r",}\s*", line):
+            if language == "mermaid":
+                yield start, "\n".join(body), True
+            fence = None
+        else:
+            body.append(line)
+    if fence is not None and language == "mermaid":
+        yield start, "\n".join(body), False
+
+
+def check_diagrams(package, report, allow_missing_render=False, context="greenfield"):
     revision = frontmatter(text_at(package, "README.md")).get("architecture_revision")
-    for path in package.glob("diagrams/**/*.mmd"):
-        text = path.read_text()
+    sources = [(path, 0, path.read_text(), True) for path in package.glob("diagrams/**/*.mmd")]
+    for path in package.rglob("*.md"):
+        sources.extend((path, line, body, closed) for line, body, closed in mermaid_blocks(path.read_text()))
+    found = set()
+    for path, line, text, closed in sources:
+        location = str(path.relative_to(package)) + (f":{line}" if line else "")
+        if not closed:
+            report.error(f"{location}: незакрытый блок mermaid")
         fields = dict(re.findall(r"^%%\s+ac_(\w+):\s*(.+)$", text, re.M))
-        for field in ("state", "purpose", "scope", "legend", "revision", "normative"):
+        required = ("state", "purpose", "scope", "legend", "revision", "normative") + (("id",) if line else ())
+        for field in required:
             if not fields.get(field):
-                report.error(f"{path.relative_to(package)}: нет metadata ac_{field}")
+                report.error(f"{location}: нет metadata ac_{field}")
+        if line and fields.get("id"):
+            key = (str(path.relative_to(package)), fields["id"])
+            if key in found:
+                report.error(f"{location}: повторный ac_id {fields['id']}")
+            found.add(key)
+        content = [s.strip() for s in text.splitlines() if s.strip() and not s.lstrip().startswith("%%")]
+        if not content:
+            report.error(f"{location}: пустая схема mermaid")
         if revision and not PLACEHOLDER_RE.search(revision) and fields.get("revision") != revision:
-            report.error(f"{path.relative_to(package)}: revision схемы не совпадает с пакетом")
+            report.error(f"{location}: revision схемы не совпадает с пакетом")
         ref = fields.get("normative", "")
         if ref and not PLACEHOLDER_RE.search(ref):
             for error in link_errors(path, ref):
-                report.error(f"{path.relative_to(package)}: {error}")
-    renders = list((package / "diagrams/rendered").glob("*.svg")) + list((package / "diagrams/rendered").glob("*.png"))
-    if not renders and not allow_missing_render:
-        report.warn("Нет rendered SVG/PNG; нужна нативная и ручная визуальная проверка")
+                report.error(f"{location}: {error}")
+    required = [("target-architecture.md", "target-container", "diagrams/target/container-view.mmd"),
+                ("target-architecture.md", "key-flow", "diagrams/target/key-flow-sequence.mmd")]
+    if context == "brownfield":
+        required.append(("current-system.md", "current-container", "diagrams/current/container-view.mmd"))
+    for document, identifier, legacy in required:
+        if (document, identifier) not in found and not (package / legacy).is_file():
+            report.error(f"{document}: отсутствует обязательная схема {identifier}")
 
 
 def check_evidence_locations(package, context, report):

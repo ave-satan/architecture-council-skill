@@ -2,7 +2,7 @@
 feature: "{{FEATURE_NAME}}"
 artifact: package_validation
 architecture_revision: "{{REVISION}}"
-validator_version: "1.2.5"
+validator_version: "1.2.6"
 status: "{{PASS|FAIL|WARNINGS}}"
 artifact_language: "{{USER_LANGUAGE}}"
 validated_at: "{{YYYY-MM-DD}}"
@@ -34,7 +34,7 @@ validated_at: "{{YYYY-MM-DD}}"
 | Полная traceability | {{PASS/FAIL}} | {{DETAILS}} |
 | Язык артефактов | {{PASS/WARNING/FAIL}} | {{DETAILS}} |
 | README и следующие действия | {{PASS/FAIL}} | {{DETAILS}} |
-| Metadata/render схем | {{PASS/FAIL}} | {{DETAILS}} |
+| Mermaid-блоки и metadata | {{PASS/FAIL}} | {{DETAILS}} |
 
 ## Ручные проверки
 
