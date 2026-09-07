@@ -1,0 +1,140 @@
+version: 1.2.5
+protocol: ../references/protocol.md
+
+artifact_language:
+  required: true
+  source: user
+  package_field: artifact_language
+  applies_to:
+    - human_readable_documents
+    - user_questions
+    - specialist_reviews
+    - diagram_labels_and_explanations
+  preserve_verbatim:
+    - technical_identifiers
+    - code_and_commands
+    - paths_and_api_names
+    - external_contracts
+
+required_for_l1:
+  - feature-package/feature-classification.md
+  - feature-package/evidence/arbiter-review.md
+  - feature-package/README.md
+  - feature-package/decision-brief.md
+  - feature-package/feature-charter.md
+  - feature-package/requirements.md
+  - feature-package/target-architecture.md
+  - feature-package/evolution-plan.md
+  - feature-package/delivery-plan.md
+  - feature-package/verification-plan.md
+  - feature-package/risks-and-assumptions.md
+  - feature-package/process-ledger.md
+  - feature-package/final-decision.md
+  - feature-package/human-review.md
+  - feature-package/implementation-handoff.md
+  - feature-package/evidence/package-validation.md
+  - feature-package/diagrams/target/container-view.mmd
+  - feature-package/diagrams/target/key-flow-sequence.mmd
+
+required_for_l2:
+  - feature-package/README.md
+  - feature-package/decision-brief.md
+  - feature-package/feature-classification.md
+  - feature-package/feature-charter.md
+  - feature-package/requirements.md
+  - feature-package/target-architecture.md
+  - feature-package/evolution-plan.md
+  - feature-package/delivery-plan.md
+  - feature-package/verification-plan.md
+  - feature-package/risks-and-assumptions.md
+  - feature-package/process-ledger.md
+  - feature-package/final-decision.md
+  - feature-package/human-review.md
+  - feature-package/implementation-handoff.md
+  - feature-package/evidence/architecture-options.md
+  - feature-package/evidence/preliminary-decision.md
+  - feature-package/evidence/red-team-review.md
+  - feature-package/evidence/arbiter-review.md
+  - feature-package/evidence/package-validation.md
+  - feature-package/diagrams/target/container-view.mmd
+  - feature-package/diagrams/target/key-flow-sequence.mmd
+
+required_for_brownfield:
+  - feature-package/current-system.md
+  - feature-package/diagrams/current/container-view.mmd
+
+required_for_greenfield:
+  - feature-package/system-context.md
+
+additional_for_l3:
+  - feature-package/evidence/threat-model.md
+  - feature-package/evidence/migration-rehearsal.md
+  - feature-package/evidence/formal-risk-acceptance.md
+
+required_for_verbose:
+  - feature-package/evidence/process-log.jsonl
+  - feature-package/evidence/process-log.md
+  - feature-package/evidence/verbose-review.md
+
+conditional_by_role:
+  intake_requirements:
+    - feature-package/requirements.md
+  solution_architect:
+    - feature-package/target-architecture.md
+  system_discovery:
+    - feature-package/current-system.md
+  arbiter:
+    - feature-package/evidence/arbiter-review.md
+  red_team:
+    - feature-package/evidence/red-team-review.md
+  solution_space_challenger:
+    - feature-package/evidence/architecture-options.md
+  domain_architect:
+    - feature-package/evidence/specialist-reviews/domain-architecture.md
+  implementation_maintainability:
+    - feature-package/evidence/specialist-reviews/implementation-maintainability.md
+  alternative_architect:
+    - feature-package/evidence/alternative-architecture.md
+  security_privacy:
+    - feature-package/evidence/specialist-reviews/security-privacy.md
+  performance_reliability:
+    - feature-package/evidence/specialist-reviews/performance-reliability.md
+  data_consistency:
+    - feature-package/evidence/specialist-reviews/data-consistency.md
+  operations_observability:
+    - feature-package/evidence/specialist-reviews/operations-observability.md
+  verification_strategist:
+    - feature-package/evidence/specialist-reviews/verification.md
+  evolution_integration:
+    - feature-package/evidence/specialist-reviews/evolution-integration.md
+
+conditional_evidence:
+  conflict:
+    - feature-package/evidence/conflict.template.md
+  human_decision:
+    - feature-package/evidence/human-decision-request.template.md
+  spike:
+    - feature-package/evidence/spike.template.md
+  benchmark:
+    - feature-package/evidence/benchmark.template.md
+  architecture_decision:
+    - feature-package/adr/ADR-NNN-template.md
+  dry_run:
+    - feature-package/pilot-observations.md
+
+validation:
+  command: python3 validate_package.py PACKAGE --level LEVEL --context CONTEXT --language LANGUAGE
+  required_checks:
+    - required_artifacts
+    - unresolved_placeholders
+    - relative_links
+    - role_coverage_and_independence
+    - solution_space_coverage
+    - status_and_revision_consistency
+    - full_traceability_chain
+    - artifact_language
+    - readme_navigation_and_next_actions
+    - diagram_metadata_and_render
+    - verbose_diagnostics
+  design_run_required_value:
+    implementation_start: NOT_REQUESTED

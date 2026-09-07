@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Council"
+  short_description: "Проектирование больших фич через независимый review"
+  default_prompt: "Используй $architecture-council, чтобы спроектировать большую фичу и подготовить Architecture Package для человеческого review."

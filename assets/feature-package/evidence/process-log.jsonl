@@ -1,0 +1,1 @@
+{"sequence":1,"timestamp":"{{ISO8601}}","event":"run_started","status":"IN_PROGRESS","stage":"initialization","actor_id":"council-orchestrator","role":"council_orchestrator","input_revision":"{{REVISION}}","artifacts":["README.md"],"source":"system","summary":"{{SAFE_LOCALIZED_SUMMARY}}"}

@@ -1,0 +1,13 @@
+%% ac_state: target
+%% ac_purpose: жизненный цикл {{ENTITY}}
+%% ac_scope: {{SCOPE}}
+%% ac_legend: стрелка — допустимый переход, подпись — событие
+%% ac_revision: {{REVISION}}
+%% ac_normative: ../../target-architecture.md#{{STATE_ANCHOR}}
+stateDiagram-v2
+    [*] --> {{INITIAL_STATE}}
+    {{INITIAL_STATE}} --> {{ACTIVE_STATE}}: {{EVENT}}
+    {{ACTIVE_STATE}} --> {{SUCCESS_STATE}}: {{EVENT}}
+    {{ACTIVE_STATE}} --> {{FAILURE_STATE}}: {{EVENT}}
+    {{FAILURE_STATE}} --> {{ACTIVE_STATE}}: {{RETRY_EVENT}}
+    {{SUCCESS_STATE}} --> [*]

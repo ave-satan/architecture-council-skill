@@ -1,0 +1,175 @@
+# Контракт Architecture Package v1.2.5
+
+Этот контракт определяет только структуру проверяемых связей. Смысл требований,
+истинность evidence, реальность человеческого разрешения и качество решения
+проверяются участниками Council, а не выводятся из успешного exit code.
+
+## Язык и markers
+
+Заголовки и пояснения переводятся на язык пользователя. Идентификаторы полей,
+Role IDs и HTML-комментарии `AC:*` / `SSC:*` сохраняются. Таблица следует после
+своего marker; первая строка — локализуемый заголовок, следующая — разделитель,
+затем данные в порядке колонок шаблона. Не переноси несколько таблиц под один
+marker и не меняй порядок колонок. Значение `|` в ячейке экранируй `\|`.
+
+README содержит уникальные `AC:README:summary`, `overview`, `reading`,
+`documents`, `adrs`, `interpretation`, `next`, `implementation`. Перевод слов
+в заголовках не изменяет эти markers.
+Markers обозначают назначение частей индекса, а не обязательные отдельные
+заголовки или повторное изложение brief. Человек по умолчанию читает только
+decision-brief.md; human-review.md заполняет агент по фактическому ответу.
+
+## Ревизии
+
+Все активные корневые документы, ADR и evidence имеют `architecture_revision`,
+совпадающую с README. Для старого Target допустим `revision`, но при наличии
+обоих полей они обязаны совпадать. У Red Team `subject_revision` тоже совпадает.
+Исторический ADR/evidence помечается `status: SUPERSEDED` (отклонённый ADR —
+`REJECTED`); его revision не переписывается. Process log хранит историю разных
+входных revisions, поэтому его metadata не используется как approval.
+
+README, Decision Brief и Final Decision совпадают по `council_recommendation`,
+`human_review_status`, `design_maturity`. Human Review использует `status`,
+совпадающий с `human_review_status`. Handoff относится к той же revision и
+human review. `implementation_start` в design-пакете остаётся `NOT_REQUESTED`.
+
+## Роли и L1
+
+Минимальные роли добавляет initializer: Intake, Domain, Solution,
+Implementation/Maintainability и независимый Arbiter. Для L2–L3 добавляются
+Challenger и Red Team; для brownfield L2–L3 — System Discovery; для L3 —
+Security/Privacy. Дополнительные роли определяются рисками. Полный список
+фиксируется одинаково в Classification и Process Ledger. CLI `--roles`
+добавляет роли к сохранённым, а не заменяет их.
+
+L1 не обязан иметь независимый challenge, Preliminary Arbitration или Red Team.
+Его Coverage — `NOT_APPLICABLE_L1`, а решение описывается в Target. Если роль
+дополнительно выбрана, её output и запись запуска обязательны.
+
+`AC:ROLE_RUNS`: Run ID, Stage, Role, Actor ID, Input revision/hash, Output,
+Gate result, Started, Completed. Все поля обязательны; даты ISO-8601 с timezone.
+Последний запуск выбранной роли должен завершиться `PASS`. Output — локальная
+ссылка внутри пакета на непустой актуальный документ. Старые запуски сохраняются
+отдельными строками; для их outputs используй архивные пути, если документ
+переписан. Run ID уникален.
+
+У specialist review, Arbiter, Red Team и Alternative Architect metadata
+`run_id`, `actor_id`, `input_revision` совпадают с ledger. `AC:ROLE_COVERAGE`
+содержит выбранную роль, тот же output и статус `COMPLETE`; `MISSING` не является
+подтверждением выполненного review. Реальное исполнение и независимость агента
+дополнительно проверяются по истории его запуска.
+
+Для L2–L3 Architecture Options содержит заполненные таблицы `SSC:FAMILIES`
+(6 колонок шаблона) и `AC:OPTIONS` (Option ID, описание/ссылка, feasibility).
+Перед выбором кандидата нужен хотя бы один `VIABLE`. Поля
+`coverage_challenger_run_id`, `coverage_challenger_actor_id`,
+`coverage_input_revision` ссылаются на реальный завершённый запуск роли
+`solution_space_challenger`, чей output — Architecture Options. Если один
+исполнитель также является Alternative Architect, зафиксируй оба запуска;
+с Solution Architect/Arbiter/Red Team их не совмещай без разрешённого waiver.
+
+## Трассировка
+
+Определения требований содержат ID в Markdown-заголовках, например
+`### FR-001: ...`; сценарии — `SCN-*` в Charter, инкременты — `INC-*` в Delivery.
+Каждое объявленное BR/FR/QA/INV/CON/TR имеет строку `AC:TRACEABILITY`:
+BR, Requirement, SCN, Architecture/ADR, INC, VER, SIG.
+
+Architecture/ADR — ссылка на Target/активный ADR или ID активного ADR.
+`AC:VERIFICATIONS` в Verification Plan определяет VER в первой колонке и
+перечисляет проверяемые requirement IDs во второй. `AC:SIGNALS` определяет SIG
+в первой колонке; он может обозначать метрику, запись журнала или доступный
+пользователю проверяемый сигнал. Это не требование вводить внешнюю телеметрию.
+
+Неприменимое звено, кроме самого Requirement, имеет формат
+`N/A; reason=конкретное обоснование; owner=владелец`. Причина и владелец обязательны.
+Пустая таблица не покрывает существующие требования. Не создавай фиктивные IDs
+ради прохождения проверки.
+
+## Изменения входов и классификация
+
+После discovery или новых фактов/требований/варианта проверь hard triggers,
+уровень, роли и обязательные артефакты. Обнови состав пакета по manifest.
+Затем выполни `scripts/record_classification.py PACKAGE`. Он записывает digest
+Charter, Requirements и Context/Dossier, а также выбранные роли. Это фиксация
+выполненной проверки, не автоматическая оценка рисков. При изменении этих
+документов digest становится устаревшим; перед handoff нужно повторить проверку.
+
+## Waiver
+
+`AC:WAIVERS` в ledger: Waiver ID, Actor ID, полный набор совмещаемых Roles через
+запятую, Revision, Approved by, Approved at, Evidence. Если отступлений нет,
+таблица пустая. Evidence — локальный документ реального решения человека с
+`status: APPROVED`, `architecture_revision`, `approved_by`, `approved_at`.
+Он должен указывать источник разрешения. Не сочиняй его от имени пользователя.
+Scope и revision точные; чужой/устаревший waiver не применяется. Валидатор выдаёт
+WARNING/WAIVED. Это не доказательство независимости и не разрешение пропустить
+саму работу/обязательные outputs.
+
+## Ссылки и code evidence
+
+Локальные Markdown-ссылки проверяются на существование пути и раздела, а
+`:N`, `:N-M`, `#LN-LM` — на диапазон строк текущего файла. Удалённые ссылки
+автоматически не загружаются. Для фактов о коде используй `AC:CODE_EVIDENCE`:
+Claim ID, Repo-relative path, Revision, Start, End. `repository_root` указывает
+доступный локальный репозиторий. Revision — полный commit SHA или
+`WORKTREE:<sha256 файла>`. Проверяется ровно этот snapshot и включительный
+диапазон строк. Для исследования без code claims допустима пустая таблица с
+`code_evidence_status: NOT_APPLICABLE` и `code_evidence_reason` в metadata.
+
+Metadata Mermaid: `%% ac_state:`, `ac_purpose`, `ac_scope`, `ac_legend`,
+`ac_revision`, `ac_normative`. Ключи не переводятся, значения переводятся кроме
+revision, state и путей. Revision актуальна, нормативная ссылка разрешима.
+Синтаксис Mermaid и визуальная корректность остаются отдельной проверкой.
+
+## Verbose и готовность
+
+JSONL — канонический append-only поток. Writer и validator используют одну
+схему: sequence, ISO-8601 UTC timestamp, непустые event/status/summary;
+необязательные поля имеют проверяемые типы. Все значения, включая artifacts,
+проверяются на известные признаки секретов до append. Это эвристика, а не
+гарантия распознавания любого секрета; безопасное содержание остаётся обязанностью
+автора события.
+
+Markdown между `AC:EVENTS:BEGIN/END` выводится из JSONL. При частичном сбое после
+append JSONL сохраняется; выполни `log_event.py PACKAGE --rebuild-markdown`,
+не повторяй событие. Заголовки вне этой области можно локализовать. При чтении
+двух журналов validator сравнивает содержимое, а не число строк.
+
+Новые записи logger имеют `event_schema: 2`. Для `role_started` и
+`role_completed` обязательны `run_id`, `actor_id`, `role`, `input_revision`.
+Они совпадают с соответствующим запуском AC:ROLE_RUNS. `timestamp` — время
+регистрации; необязательный `occurred_at` — известное время самого события в UTC,
+не позже регистрации, вместе с непустым `timing_basis` (источник измерения).
+Если точное время неизвестно, не указывай его и поясни пробел в summary/ledger.
+Legacy записи читаются без переписывания; отсутствие run_id у старых границ
+ролей даёт warning. Schema validation не доказывает наличие всех событий:
+при завершении среза сверяй журнал с ledger и outputs.
+
+## Продолжение прогона
+
+После новых evidence или разрешения продолжить сначала установи текущую revision
+и незакрытые gates. Зафиксируй смену revision отдельным событием
+`revision_started`, новые разрешения — `user_input_received` со ссылкой на
+документированное решение; не трактуй продолжение как новое approval.
+
+Веди последующие роли по тому же AC:ROLE_RUNS/AC:ROLE_COVERAGE контракту с новыми
+run IDs. Незавершённая рабочая revision может храниться отдельно, но её ledger
+должен быть структурным, с точными входами и outputs. До проверки готовности
+собери полный пакет этой revision: проверка старого корня не проверяет новую
+рабочую папку. Пересмотри Classification, роли и зависимые gates по новым фактам.
+
+Не заменяй несколько независимых запусков одним summary-событием. Для эксперимента
+запиши начало, результат и существенные ошибки/восстановления со ссылками на
+evidence, затем отдельные границы каждого reviewer и арбитра. Один агент,
+выполнивший три аудита, остаётся одним актором с тремя run IDs.
+
+После продолжения дополни verbose-review новым явно датированным срезом с
+диапазоном sequence, новыми runs и пределами проверки. Старый срез сохраняй как
+историю. Сверь новые завершения с ledger; пробелы восстанавливай отдельными
+поздними событиями без изменения исторического JSONL и выдуманных времён.
+
+`--phase review` по умолчанию проверяет полный пакет. `--phase draft` и
+`--template-mode` не означают готовность к handoff. Неполный BLOCKED-пакет можно
+передать для адресного решения человека с перечнем непройденных gates; не выдавай
+успех проверки черновика за успешный Council.

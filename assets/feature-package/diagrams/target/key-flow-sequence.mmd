@@ -1,0 +1,21 @@
+%% ac_state: target
+%% ac_purpose: критический end-to-end сценарий {{SCN_ID}}
+%% ac_scope: {{SCOPE}}
+%% ac_legend: сплошная стрелка — запрос, пунктирная — ответ
+%% ac_revision: {{REVISION}}
+%% ac_normative: ../../target-architecture.md#{{SCN_ANCHOR}}
+sequenceDiagram
+    actor User as {{ACTOR}}
+    participant Client as {{CLIENT}}
+    participant API as {{API}}
+    participant Core as {{CORE_COMPONENT}}
+    participant Store as {{STORE_OR_EXTERNAL_SYSTEM}}
+
+    User->>Client: {{ACTION}}
+    Client->>API: {{REQUEST}}
+    API->>Core: {{COMMAND}}
+    Core->>Store: {{PERSIST_OR_CALL}}
+    Store-->>Core: {{RESULT}}
+    Core-->>API: {{RESULT}}
+    API-->>Client: {{OBSERVABLE_RESPONSE}}
+    Client-->>User: {{OUTCOME}}
