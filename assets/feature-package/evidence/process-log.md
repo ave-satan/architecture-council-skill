@@ -17,5 +17,5 @@ updated_at: "{{YYYY-MM-DD}}"
 | # | Timestamp | Event | Stage | Actor/Role | Status | Artifacts | Summary |
 |---:|---|---|---|---|---|---|---|
 <!-- AC:EVENTS:BEGIN -->
-| 1 | {{ISO8601}} | run_started | initialization | council-orchestrator/council_orchestrator | IN_PROGRESS | README.md | {{SAFE_LOCALIZED_SUMMARY}} |
+| 1 | {{ISO8601}} | run_started | initialization | council-orchestrator/council_orchestrator | IN_PROGRESS | [README](../README.md) | {{SAFE_LOCALIZED_SUMMARY}} |
 <!-- AC:EVENTS:END -->

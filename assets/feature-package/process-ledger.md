@@ -10,9 +10,8 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Журнал процесса Architecture Council
 
-При `diagnostics_mode: VERBOSE` подробная временная шкала находится в
-`evidence/process-log.md`; этот документ остаётся нормативным подтверждением
-ролей, независимости и gates.
+{{PROCESS_LOG_LINK_OR_DISABLED}} Этот документ остаётся нормативным
+подтверждением ролей, независимости и gates.
 
 ## Правила идентификации
 

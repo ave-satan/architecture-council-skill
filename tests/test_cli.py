@@ -357,6 +357,23 @@ class LoggerCLI(unittest.TestCase):
     def append(self,*extra):
         return run('log_event.py',self.package,'--event','gate_evaluated','--status','PASS','--summary','Проверка завершена',*extra)
 
+    def test_artifact_links_resolve_and_jsonl_keeps_original_paths(self):
+        from urllib.parse import unquote
+        artifact = 'evidence/Замер (календарь).md'
+        (self.package / artifact).write_text('# Замер\n')
+        result = self.append('--artifact', artifact)
+        self.assertEqual(0, result.returncode, result.stderr)
+        destinations = re.findall(r'\]\(([^)]+)\)', self.md.read_text())
+        self.assertTrue(destinations)
+        targets = {(self.md.parent / unquote(raw)).resolve() for raw in destinations}
+        self.assertIn((self.package / artifact).resolve(), targets)
+        self.assertTrue(all(path.exists() for path in targets))
+        self.assertEqual([artifact], json.loads(self.jsonl.read_text().splitlines()[-1])['artifacts'])
+        before = self.md.read_bytes()
+        rebuilt = run('log_event.py', self.package, '--rebuild-markdown')
+        self.assertEqual(0, rebuilt.returncode, rebuilt.stderr)
+        self.assertEqual(before, self.md.read_bytes())
+
     def test_invalid_events_are_rejected_before_either_file_changes(self):
         before=(self.jsonl.read_bytes(),self.md.read_bytes())
         for extra in [('--timestamp','bad-date'),('--timestamp','2026-09-06'),('--event','   '),('--status',' '),('--summary',' '),('--duration-ms','-1'),('--artifact','https://example.invalid/report?api_key=DUMMY_REVIEW_SECRET')]:

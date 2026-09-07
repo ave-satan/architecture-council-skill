@@ -267,3 +267,15 @@ An approved revision can still be reviewed elsewhere. Any material change to
 requirements, architecture, or evidence creates a new revision and returns the
 package to Human Review. `implementation-handoff.md` is an instruction for a
 future implementation run, not permission to begin one.
+
+## Package navigation
+
+Every reference to another package document must be a clickable relative Markdown
+link with a descriptive label, including prose, tables, briefs, ADRs and evidence.
+Resolve paths from the referring document (`../requirements.md` inside evidence).
+Link specific requirements, findings and sections to existing anchors; add stable
+explicit anchors when needed. Plain filenames, backticked paths and bare IDs do
+not replace navigation links. Keep machine-readable fields, JSONL and code syntax
+unchanged; provide navigation in the surrounding Markdown. Link only artifacts
+that exist in the selected package profile; describe absent optional artifacts as
+not applicable. Check local link targets and anchors before handoff.

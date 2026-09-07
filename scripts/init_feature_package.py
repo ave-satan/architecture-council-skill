@@ -189,6 +189,7 @@ def substitute_known_values(
         "{{CURRENT_SYSTEM_OR_SYSTEM_CONTEXT_LINK}}": context_link,
         "{{THREAT_MODEL_LINK_OR_NOT_APPLICABLE}}": threat_model,
         "{{DIAGNOSTICS_MODE}}": diagnostics_mode,
+        "{{PROCESS_LOG_LINK_OR_DISABLED}}": "Подробная временная шкала: [журнал событий](evidence/process-log.md)." if diagnostics_mode == "VERBOSE" else "Подробная временная шкала не включена (NORMAL).",
     }
     role_list = ", ".join(f'"{role}"' for role in roles)
 

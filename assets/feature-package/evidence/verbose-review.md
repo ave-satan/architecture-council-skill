@@ -21,11 +21,11 @@ chain-of-thought, сырых prompts, секретов, исходного ко�
 
 | Метрика | Значение | Источник |
 |---|---:|---|
-| События | {{COUNT}} | `evidence/process-log.md` |
+| События | {{COUNT}} | [журнал событий](process-log.md) |
 | Запуски ролей | {{COUNT}} | [Process Ledger](../process-ledger.md) |
-| Возвраты между стадиями | {{COUNT}} | `evidence/process-log.md` |
-| Уточнения пользователя | {{COUNT}} | `evidence/process-log.md` |
-| Ошибки и восстановления | {{COUNT}} | `evidence/process-log.md` |
+| Возвраты между стадиями | {{COUNT}} | [журнал событий](process-log.md) |
+| Уточнения пользователя | {{COUNT}} | [журнал событий](process-log.md) |
+| Ошибки и восстановления | {{COUNT}} | [журнал событий](process-log.md) |
 
 ## Временные и процессные узкие места
 

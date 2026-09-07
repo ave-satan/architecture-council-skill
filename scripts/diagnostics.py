@@ -5,6 +5,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]+\}\}")
 BEGIN = "<!-- AC:EVENTS:BEGIN -->"
@@ -118,6 +119,12 @@ def cell(value: object) -> str:
             .replace("|", "&#124;").replace("\r", " ").replace("\n", " "))
 
 
+def artifact_link(path: str) -> str:
+    label = re.sub(r'([\\\[\]])', r'\\\1', path)
+    destination = path if re.match(r'^[A-Za-z][\w+.-]*:', path) or path.startswith('/') else '../' + path
+    return f'[{label}]({quote(destination, safe="/:#%")})'
+
+
 def event_rows(events: list[dict]) -> str:
     rows = []
     for event in events:
@@ -126,7 +133,7 @@ def event_rows(events: list[dict]) -> str:
         summary = "; ".join(details + [event["summary"]])
         values = [event["sequence"], event["timestamp"], event["event"], event.get("stage"),
                   "/".join(str(event[k]) for k in ("actor_id", "role") if event.get(k)),
-                  event["status"], ", ".join(event.get("artifacts", [])), summary]
+                  event["status"], ", ".join(artifact_link(path) for path in event.get("artifacts", [])), summary]
         rows.append("| " + " | ".join(cell(value) for value in values) + " |")
     return "\n".join(rows) + "\n"
 
