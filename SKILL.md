@@ -43,12 +43,11 @@ to load into context all at once.
    installed directory first, then run:
 
    ```bash
-   python3 <skill-dir>/scripts/init_feature_package.py <target-directory> \
+   python3 <skill-dir>/scripts/init_feature_package.py --package-root architecture \
      --level L2 \
      --context brownfield \
      --language ru \
-     --feature "Название фичи" \
-     --slug feature-slug \
+     --feature "Синхронизация календаря" \
      --roles domain_architect,implementation_maintainability
    ```
 
@@ -60,6 +59,16 @@ The bundled templates are written in Russian. When the user's language is not
 Russian, translate every copied human-readable template and diagram label into
 the user's language immediately after initialization and before presenting or
 continuing the package. Do not translate technical identifiers or contracts.
+
+New packages use `001 — Синхронизация календаря`: the next number in the project's
+shared package directory and a short meaningful title in the user's language.
+Let the initializer allocate the number; do not build dated slugs or manually
+guess the next number. Use that same numbered name in human-facing links and
+summaries. `--slug` is optional technical metadata, not the visible package name.
+The default package root is `./architecture`; reuse the project's established
+root if different. Keep revisions inside the same package; a continuation does
+not allocate another number. Existing unnumbered packages stay usable; do not
+rename them without updating their references as a separate scoped change.
 
 Do not overwrite a non-empty target. If a package already exists, inspect it and
 continue its current architecture revision instead of reinitializing it.

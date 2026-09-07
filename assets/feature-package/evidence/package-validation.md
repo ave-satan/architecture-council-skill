@@ -2,7 +2,7 @@
 feature: "{{FEATURE_NAME}}"
 artifact: package_validation
 architecture_revision: "{{REVISION}}"
-validator_version: "1.2.6"
+validator_version: "1.2.7"
 status: "{{PASS|FAIL|WARNINGS}}"
 artifact_language: "{{USER_LANGUAGE}}"
 validated_at: "{{YYYY-MM-DD}}"

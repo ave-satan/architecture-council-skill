@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Создаёт Architecture Package Protocol v1.2.6 из ресурсов локального skill."""
+"""Создаёт Architecture Package Protocol v1.2.7 из ресурсов локального skill."""
 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import re
 import shutil
@@ -274,14 +275,42 @@ updated_at: "{date.today().isoformat()}"
     (evidence / "process-log.md").write_text(markdown, encoding="utf-8")
 
 
+def reserve_package(root: Path, feature: str) -> tuple[Path, int]:
+    title = feature.strip()
+    if not title or title in {'.', '..'} or any(c in title for c in '/\\:') or any(ord(c) < 32 or ord(c) == 127 for c in title):
+        raise ValueError("Название пакета должно быть непустым, без разделителей пути и управляющих символов")
+    title = re.sub(r' +', ' ', title)
+    if len(title.encode('utf-8')) > 220:
+        raise ValueError("Название пакета слишком длинное; используй короткое описание")
+    root.mkdir(parents=True, exist_ok=True)
+    # This file is both the lock and the high-water mark. Never reuse a deleted number.
+    with (root / '.package-sequence').open('a+', encoding='utf-8') as sequence:
+        fcntl.flock(sequence.fileno(), fcntl.LOCK_EX)
+        sequence.seek(0)
+        recorded = sequence.read().strip()
+        if recorded and not recorded.isdecimal():
+            raise ValueError("Повреждён .package-sequence; проверь счётчик перед созданием пакета")
+        numbers = [int(recorded or '0')]
+        for path in root.iterdir():
+            match = re.match(r'^(\d{3,})\s*[—_-]', path.name)
+            if match:
+                numbers.append(int(match[1]))
+        number = max(numbers) + 1
+        target = root / f'{number:03d} — {title}'
+        target.mkdir()
+        sequence.seek(0); sequence.truncate(); sequence.write(str(number) + '\n'); sequence.flush()
+    return target, number
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("target", type=Path, help="Новый или пустой каталог Architecture Package")
+    parser.add_argument("target", type=Path, nargs='?', help="Явный путь для совместимости; без него создаётся пронумерованный пакет")
+    parser.add_argument("--package-root", type=Path, help="Общий каталог пакетов; по умолчанию ./architecture")
     parser.add_argument("--level", choices=("L1", "L2", "L3"), required=True)
     parser.add_argument("--context", choices=("greenfield", "brownfield"), required=True)
     parser.add_argument("--language", required=True, help="Код языка, например ru или en")
     parser.add_argument("--feature", required=True, help="Название фичи на языке пользователя")
-    parser.add_argument("--slug", required=True, help="Стабильный файловый slug фичи")
+    parser.add_argument("--slug", help="Необязательный технический ID; не используется в видимом имени пакета")
     parser.add_argument("--revision", default="architecture-v1")
     parser.add_argument("--roles", help="Role IDs через запятую")
     parser.add_argument(
@@ -294,6 +323,8 @@ def main() -> int:
         help="Локализованное краткое описание первого события VERBOSE",
     )
     args = parser.parse_args()
+    if args.target is not None and args.package_root is not None:
+        parser.error("target и --package-root нельзя использовать вместе")
 
     try:
         roles = parse_roles(args.roles)
@@ -306,7 +337,15 @@ def main() -> int:
         print(f"[ERROR] {error}", file=sys.stderr)
         return 2
 
-    target = args.target.resolve()
+    number = None
+    try:
+        if args.target is None:
+            target, number = reserve_package((args.package_root or Path('architecture')).resolve(), args.feature)
+        else:
+            target = args.target.resolve()
+    except (OSError, ValueError) as error:
+        print(f"[ERROR] {error}", file=sys.stderr)
+        return 2
     if target.exists() and not target.is_dir():
         print(f"[ERROR] Target существует и не является каталогом: {target}", file=sys.stderr)
         return 2
@@ -326,7 +365,7 @@ def main() -> int:
         substitute_known_values(
             target,
             feature=args.feature,
-            slug=args.slug,
+            slug=args.slug or (f'package-{number:03d}' if number is not None else target.name),
             language=args.language,
             level=args.level,
             context=args.context,
@@ -334,6 +373,13 @@ def main() -> int:
             roles=roles,
             diagnostics_mode="VERBOSE" if args.verbose else "NORMAL",
         )
+        if number is not None:
+            for name in ('README.md', 'decision-brief.md'):
+                path = target / name
+                text = path.read_text()
+                text = text.replace('---\n', f'---\npackage_number: {number}\npackage_name: {json.dumps(target.name, ensure_ascii=False)}\n', 1)
+                text = text.replace(f'# {args.feature}\n', f'# {target.name}\n', 1)
+                path.write_text(text)
         if args.verbose:
             initialize_verbose_log(
                 target,
@@ -351,7 +397,7 @@ def main() -> int:
     print(f"Architecture Package создан: {target}")
     print(f"Уровень/контекст: {args.level}/{args.context}; язык: {args.language}")
     print(f"Выбранные роли: {', '.join(roles) if roles else 'нет дополнительных ролей'}")
-    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.6.")
+    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.7.")
     if args.verbose:
         print("Диагностика: VERBOSE; события добавляет только Council Orchestrator через log_event.py.")
     print(

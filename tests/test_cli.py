@@ -4,11 +4,67 @@ import json
 import re
 import shutil
 import subprocess
+import sys
+import shlex
+from concurrent.futures import ThreadPoolExecutor
 import tempfile
 import unittest
 from pathlib import Path
 
 from package_fixture import complete_package, run, set_meta, STAMP, SCRIPTS
+
+
+class NumberedPackageCLI(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='council-names-', dir='/private/tmp')
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / 'architecture'
+
+    def create(self, title='Синхронизация календаря', *extra):
+        return run('init_feature_package.py', '--package-root', self.root, '--level', 'L2',
+                   '--context', 'greenfield', '--language', 'ru', '--feature', title, *extra)
+
+    def test_numbered_name_and_quoted_validation_command(self):
+        result = self.create('Календарь «Работа»', '--verbose')
+        self.assertEqual(0, result.returncode, result.stderr)
+        path = self.root / '001 — Календарь «Работа»'
+        text = (path / 'README.md').read_text()
+        self.assertIn('package_number: 1', text)
+        self.assertIn('# 001 — Календарь «Работа»', text)
+        self.assertIn('# 001 — Календарь «Работа»', (path / 'decision-brief.md').read_text())
+        command = shlex.split(result.stdout.split('Проверка шаблона: ', 1)[1])
+        self.assertIn(str(path), command)
+        check = subprocess.run([sys.executable, *command[1:]], capture_output=True, text=True)
+        self.assertEqual(0, check.returncode, check.stdout + check.stderr)
+
+    def test_existing_numbers_and_deleted_package_are_not_reused(self):
+        (self.root / '008 — Старая задача').mkdir(parents=True)
+        self.assertEqual(0, self.create().returncode)
+        shutil.rmtree(self.root / '009 — Синхронизация календаря')
+        self.assertEqual(0, self.create().returncode)
+        self.assertTrue((self.root / '010 — Синхронизация календаря').is_dir())
+
+    def test_concurrent_creation_gets_distinct_numbers(self):
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            results = list(pool.map(lambda _: self.create(), range(3)))
+        for result in results:
+            self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual({'001', '002', '003'}, {p.name[:3] for p in self.root.iterdir() if p.is_dir()})
+
+    def test_invalid_title_and_corrupt_counter_do_not_create_packages(self):
+        for title in ('', '../escape', 'Новый/пакет', 'Новый\nпакет'):
+            self.assertEqual(2, self.create(title).returncode)
+        self.assertFalse(self.root.exists())
+        self.root.mkdir(); (self.root / '.package-sequence').write_text('broken')
+        self.assertEqual(2, self.create().returncode)
+        self.assertEqual(['.package-sequence'], [p.name for p in self.root.iterdir()])
+
+    def test_default_root_is_architecture_in_current_project(self):
+        result = subprocess.run([sys.executable, str(SCRIPTS / 'init_feature_package.py'), '--level', 'L1',
+                                 '--context', 'greenfield', '--language', 'ru', '--feature', 'Импорт встреч'],
+                                cwd=self.temp.name, capture_output=True, text=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue((self.root / '001 — Импорт встреч' / 'README.md').is_file())
 
 
 class PackageCLI(unittest.TestCase):

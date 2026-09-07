@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Структурная проверка Architecture Package Protocol v1.2.6 без зависимостей."""
+"""Структурная проверка Architecture Package Protocol v1.2.7 без зависимостей."""
 
 from __future__ import annotations
 
