@@ -216,6 +216,34 @@ class PackageCLI(unittest.TestCase):
                 p.write_text(change(original))
                 self.assertRejected(self.validate(), diagnostic)
 
+    def test_research_diagram_is_explicit_and_cannot_replace_required_diagram(self):
+        p = self.package / 'evidence/research.md'
+        header = '---\narchitecture_revision: r1\nartifact_language: en\n---\n'
+        body = '```mermaid\n  %% ac_kind: research\nflowchart LR\nA --> B\n```\n'
+        p.write_text(header + body)
+        self.assertEqual(0, self.validate().returncode)
+        p.write_text(header + body.replace('A --> B', '').replace('flowchart LR', ''))
+        self.assertRejected(self.validate(), 'пустая схема')
+        p.write_text(header + body.rsplit('```', 1)[0])
+        self.assertRejected(self.validate(), 'незакрытый блок')
+        p.write_text(header + body)
+        target = self.package / 'target-architecture.md'
+        target.write_text(re.sub(r'```mermaid\n.*?```', body, target.read_text(), flags=re.S))
+        self.assertRejected(self.validate(), 'отсутствует обязательная схема')
+
+    def test_missing_diagram_metadata_has_one_diagnostic_without_revision_cascade(self):
+        (self.package / 'evidence/research.md').write_text('---\narchitecture_revision: r1\nartifact_language: en\n---\n```mermaid\nflowchart LR\nA --> B\n```\n')
+        result = self.validate()
+        self.assertRejected(result, 'нет metadata')
+        self.assertIn('errors=1, warnings=0', result.stdout)
+        self.assertNotIn('revision схемы не совпадает', result.stdout)
+
+    def test_open_coverage_gate_is_distinct_but_still_fails_review(self):
+        set_meta(self.package / 'evidence/architecture-options.md', solution_space_coverage='REWORK')
+        result = self.validate()
+        self.assertRejected(result, '[ERROR][GATE]')
+        self.assertIn('open_gates=1', result.stdout)
+
     def test_legacy_mermaid_sources_remain_valid_without_renders(self):
         p = self.package / 'target-architecture.md'; text = p.read_text()
         blocks = re.findall(r'```mermaid\n(.*?)```', text, re.S)

@@ -310,7 +310,7 @@ def check_roles(package, roles, report, template_mode):
     coverage = {row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:ROLE_COVERAGE") if row}
     for role in sorted(roles):
         if role not in latest:
-            report.error(f"Для выбранной роли нет завершённого запуска: {role}")
+            report.gate(f"Для выбранной роли нет завершённого запуска: {role}")
             continue
         run = latest[role]
         if run[6] != "PASS":
@@ -348,12 +348,12 @@ def check_solution_space_coverage(package, level, report, template_mode):
         return
     meta = frontmatter(text)
     if meta.get("solution_space_coverage") != "PASS":
-        report.error("Solution Space Coverage Gate должен иметь PASS до арбитража")
+        report.gate("Solution Space Coverage Gate должен иметь PASS до арбитража")
     if meta.get("missed_solution_family_status") not in {"NONE", "REWORKED"}:
-        report.error("Открытый MISSED_SOLUTION_FAMILY блокирует арбитраж")
+        report.gate("Открытый MISSED_SOLUTION_FAMILY блокирует арбитраж")
     matches = [row for row in role_runs(package) if len(row) == 9 and row[0] == meta.get("coverage_challenger_run_id")]
     if len(matches) != 1 or matches[0][2] != "solution_space_challenger" or matches[0][6] != "PASS":
-        report.error("Coverage: нет завершённого Solution Space Challenger run")
+        report.gate("Coverage: нет завершённого Solution Space Challenger run")
     elif (meta.get("coverage_challenger_actor_id") != matches[0][3]
           or meta.get("coverage_input_revision") != matches[0][4]
           or output_path(package, matches[0][5]) != (package / "evidence/architecture-options.md").resolve()):
@@ -364,7 +364,7 @@ def check_solution_space_coverage(package, level, report, template_mode):
     if not table(text, "AC:OPTIONS"):
         report.error("Coverage: отсутствуют варианты AC:OPTIONS")
     elif not any(len(row) >= 3 and row[2] == "VIABLE" for row in table(text, "AC:OPTIONS")):
-        report.error("Coverage: нет VIABLE кандидата; используй draft для незавершённого evidence")
+        report.gate("Coverage: нет VIABLE кандидата; используй draft для незавершённого evidence")
 
 
 def check_status_consistency(package, report, template_mode):
@@ -463,20 +463,28 @@ def check_diagrams(package, report, allow_missing_render=False, context="greenfi
         location = str(path.relative_to(package)) + (f":{line}" if line else "")
         if not closed:
             report.error(f"{location}: незакрытый блок mermaid")
-        fields = dict(re.findall(r"^%%\s+ac_(\w+):\s*(.+)$", text, re.M))
+        fields = dict(re.findall(r"^\s*%%\s+ac_(\w+):\s*(.+)$", text, re.M))
+        content = [s.strip() for s in text.splitlines() if s.strip() and not s.lstrip().startswith("%%")]
+        if not content:
+            report.error(f"{location}: пустая схема mermaid")
+        if fields.get("kind") == "research":
+            if not path.relative_to(package).parts[0] == "evidence":
+                report.error(f"{location}: ac_kind research разрешён только в evidence; обязательные схемы остаются нормативными")
+            elif fields.get("id") or fields.get("normative"):
+                report.error(f"{location}: исследовательская схема не должна объявлять ac_id или ac_normative")
+            continue
+        if fields.get("kind") not in (None, "normative"):
+            report.error(f"{location}: неизвестный ac_kind {fields['kind']}")
         required = ("state", "purpose", "scope", "legend", "revision", "normative") + (("id",) if line else ())
-        for field in required:
-            if not fields.get(field):
-                report.error(f"{location}: нет metadata ac_{field}")
+        missing = ["ac_" + field for field in required if not fields.get(field)]
+        if missing:
+            report.error(f"{location}: нет metadata {', '.join(missing)}")
         if line and fields.get("id"):
             key = (str(path.relative_to(package)), fields["id"])
             if key in found:
                 report.error(f"{location}: повторный ac_id {fields['id']}")
             found.add(key)
-        content = [s.strip() for s in text.splitlines() if s.strip() and not s.lstrip().startswith("%%")]
-        if not content:
-            report.error(f"{location}: пустая схема mermaid")
-        if revision and not PLACEHOLDER_RE.search(revision) and fields.get("revision") != revision:
+        if revision and fields.get("revision") and not PLACEHOLDER_RE.search(revision) and fields["revision"] != revision:
             report.error(f"{location}: revision схемы не совпадает с пакетом")
         ref = fields.get("normative", "")
         if ref and not PLACEHOLDER_RE.search(ref):

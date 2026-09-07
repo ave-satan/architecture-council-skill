@@ -2,7 +2,7 @@
 feature: "{{FEATURE_NAME}}"
 artifact: package_validation
 architecture_revision: "{{REVISION}}"
-validator_version: "1.2.7"
+validator_version: "1.2.8"
 status: "{{PASS|FAIL|WARNINGS}}"
 artifact_language: "{{USER_LANGUAGE}}"
 validated_at: "{{YYYY-MM-DD}}"
@@ -15,6 +15,15 @@ validated_at: "{{YYYY-MM-DD}}"
 ```text
 {{VALIDATOR_COMMAND}}
 ```
+
+## Текущий срез
+
+- Фаза и входная ревизия/hash: {{PHASE_AND_INPUT_REVISION_OR_HASH}}
+- Структурные ошибки: {{COUNT_AND_LINKS_OR_NONE}}
+- Незакрытые gates: {{COUNT_AND_LINKS_OR_NONE}}
+- Исторические ограничения/предупреждения: {{DETAILS_OR_NONE}}
+
+Обновляй этот результат после проверки; прежние значимые срезы сохраняй по ссылке.
 
 ## Результат
 
@@ -38,6 +47,6 @@ validated_at: "{{YYYY-MM-DD}}"
 
 ## Ручные проверки
 
-- Визуальная корректность отрендеренных схем: {{PASS/NOT_RUN}}
+- Содержание схем: {{PASS/NOT_RUN}}; отображение Mermaid предполагается в редакторе пользователя.
 - Семантическая корректность evidence: {{PASS/NOT_RUN}}
 - Отсутствие изменений production-кода в design run: {{PASS/NOT_PROVABLE}}

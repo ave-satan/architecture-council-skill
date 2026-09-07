@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Структурная проверка Architecture Package Protocol v1.2.7 без зависимостей."""
+"""Структурная проверка Architecture Package Protocol v1.2.8 без зависимостей."""
 
 from __future__ import annotations
 
@@ -31,6 +31,7 @@ SENSITIVE_LOG_VALUE_PATTERNS = (
 class Report:
     def __init__(self) -> None:
         self.errors: list[str] = []
+        self.gates: list[str] = []
         self.warnings: list[str] = []
 
     def error(self, message: str) -> None:
@@ -38,6 +39,10 @@ class Report:
 
     def warn(self, message: str) -> None:
         self.warnings.append(message)
+
+    def gate(self, message: str) -> None:
+        self.errors.append(message)
+        self.gates.append(message)
 
 
 def parse_manifest_lists(path: Path) -> tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
@@ -206,10 +211,12 @@ def main() -> int:
         print("Проверен только черновик/шаблон; это не PASS готовности к handoff.")
 
     for message in report.errors:
-        print(f"[ERROR] {message}")
+        category = "GATE" if message in report.gates else "STRUCTURE"
+        print(f"[ERROR][{category}] {message}")
     for message in report.warnings:
         print(f"[WARN] {message}")
     print(f"Итог: errors={len(report.errors)}, warnings={len(report.warnings)}")
+    print(f"Категории: structure={len(report.errors) - len(report.gates)}, open_gates={len(report.gates)}; warnings отдельно, не означают PASS")
     return 1 if report.errors else 0
 
 

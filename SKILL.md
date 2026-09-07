@@ -206,6 +206,8 @@ revision-linked decisions/history, and explain only material changes in chat.
   verification or decision path.
 - Put Mermaid diagrams inline in fenced `mermaid` blocks in the relevant Markdown
   document. Keep diagram metadata and architecture revision inside the block.
+  Research-only illustrations in evidence may use `%% ac_kind: research`; they
+  cannot replace normative diagrams (see package contract).
   Assume the user's editor renders Mermaid through its plugin; do not require
   separate .mmd files, SVG/PNG export, screenshots, or a renderer installation.
   Lack of preview in this session is not a gate or evidence gap. Report actual
@@ -243,6 +245,31 @@ independence. If log projection diverges, use `log_event.py PACKAGE
 Resolve validation errors. Record warnings and actual evidence gaps honestly in
 `evidence/package-validation.md`. Native editor rendering of inline Mermaid is
 the assumed display path, not an additional verification task for the user.
+
+## Keep continuation bounded
+
+Before a series of experiments, set one branch budget in the existing evidence
+plan: decision affected, sufficient evidence, total time/attempts including tools
+and reviews, and stop/switch criteria. Reassess value before repairing the harness
+or adding another experiment; a new subtask does not reset the budget. Follow
+protocol section 10 and preserve existing authorization within its scope.
+Compare conditional scenarios while requirements are open; do not block useful
+comparison to make the user choose a mechanism prematurely.
+
+Keep final-decision.md as the current decision summary with scope, applicable
+review links and the next gate. After material input changes, update affected
+normative documents and classification together; explicitly supersede obsolete
+claims. Preserve useful evidence instead of restarting the whole package.
+Keep verbose-review.md as a compact current retrospective (about 300–600 words),
+not a second event log. Archive a prior summary only at a meaningful checkpoint;
+do not copy it on every turn. Reuse immutable inputs by revision/hash, saving
+unrecoverable mutable inputs once. Do not duplicate frozen copies or repeatedly
+recount the full inventory. Validate changed artifacts during work and run the
+full applicable check before handoff; repeat only for new changes or concerns.
+For each new Markdown evidence file, preserve revision/language metadata and
+clickable references at creation. Keep package-validation.md as one dated current
+result with phase, input snapshot, structural errors, open gates and warnings;
+link prior results instead of appending an endless history.
 
 ## Finish the design run
 

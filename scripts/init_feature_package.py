@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Создаёт Architecture Package Protocol v1.2.7 из ресурсов локального skill."""
+"""Создаёт Architecture Package Protocol v1.2.8 из ресурсов локального skill."""
 
 from __future__ import annotations
 
@@ -398,7 +398,7 @@ def main() -> int:
     print(f"Architecture Package создан: {target}")
     print(f"Уровень/контекст: {args.level}/{args.context}; язык: {args.language}")
     print(f"Выбранные роли: {', '.join(roles) if roles else 'нет дополнительных ролей'}")
-    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.7.")
+    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.8.")
     if args.verbose:
         print("Диагностика: VERBOSE; события добавляет только Council Orchestrator через log_event.py.")
     print(

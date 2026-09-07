@@ -18,6 +18,14 @@ updated_at: "{{YYYY-MM-DD}}"
 
 {{OPTION_CONFLICT_ADR_OR_REQUIREMENT}}
 
+## Бюджет ветки и остановка
+
+{{BRANCH_LINK_OR_LOCAL_SCOPE_AND_TOTAL_BUDGET_INCLUDING_PREPARATION_REVIEW_AND_REPAIRS}}
+
+- Достаточное evidence для решения: {{MINIMUM_DECISION_CHANGING_OBSERVATION}}
+- Остановиться или сменить семейство: {{STOP_OR_SWITCH_CRITERION}}
+- Почему следующий опыт изменит решение: {{EXPECTED_INFORMATION_GAIN}}
+
 ## Гипотеза
 
 {{TESTABLE_HYPOTHESIS}}
