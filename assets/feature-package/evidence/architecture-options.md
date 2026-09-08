@@ -25,17 +25,30 @@ updated_at: "{{YYYY-MM-DD}}"
 Карта создаётся до выбора предпочтительного варианта. Она ограничена
 релевантными осями и не требует полного декартова перебора.
 
+### Постановка без предполагаемой реализации
+
+{{OUTCOME_NECESSARY_FUNCTIONS_AND_OPEN_CONSTRAINT_INTERPRETATIONS_WITH_CHARTER_LINK}}
+
 ### Оси поиска
 
 | Ось | Почему релевантна | Рассмотренные механизмы | Связанные требования |
 |---|---|---|---|
-| {{CONTROL_DATA_TRANSPORT_TOPOLOGY_SYNC_RENDEZVOUS_FALLBACK_OR_OTHER}} | {{RATIONALE}} | {{MECHANISMS}} | {{REQ_IDS}} |
+| {{TASK_DERIVED_FUNCTION_OR_DECISION_AXIS}} | {{RATIONALE}} | {{MECHANISMS}} | {{REQ_IDS}} |
 
 ### Семейства решений <!-- SSC:FAMILIES -->
 
 | Family ID | Семейство/механизм | Источник | Покрываемые требования | Ключевые неизвестные | Статус |
 |---|---|---|---|---|---|
 | SF-001 | {{SOLUTION_FAMILY}} | {{specialist/solution_architect/alternative_architect/user/red_team}} | {{REQ_IDS}} | {{UNKNOWN_OR_NONE}} | {{CANDIDATE_FAMILY|EXCLUDED_WITH_EVIDENCE|OUT_OF_SCOPE_BY_REQUIREMENT}} |
+
+### Первичная оценка существенных семейств
+
+| Семейство | Соответствие / условие | Готовые средства и evidence | Собственная работа | Критический неизвестный факт / дешёвая проверка |
+|---|---|---|---|---|
+| {{SF_LINK}} | {{FIT_OR_CONFIRMATION_NEEDED}} | {{REUSE_AND_PRIMARY_EVIDENCE_LINKS_OR_NONE}} | {{CUSTOM_WORK}} | {{UNKNOWN_AND_CHEAPEST_CHECK}} |
+
+Перед дорогим углублением сопоставь ветки; детали выбранного механизма не становятся
+требованиями к альтернативам. Не повторяй общие для семейств проверки.
 
 ### Доказательно исключённые семейства
 
@@ -47,8 +60,9 @@ updated_at: "{{YYYY-MM-DD}}"
 
 - Challenger run: {{RUN_ID}}
 - Actor ID: {{INDEPENDENT_ACTOR_ID}}
-- Input revision/hash: {{REQUIREMENTS_CONSTRAINTS_AND_SPECIALIST_FINDINGS_HASH}}
+- Input revision/hash: {{RAW_USER_STATEMENTS_CONSTRAINT_PROVENANCE_REQUIREMENTS_AND_FINDINGS_HASH}}
 - Предпочтительный вариант был скрыт: {{yes/no}}
+- Проверка постановки и оснований исключения: {{UNSUPPORTED_ASSUMPTIONS_SCOPE_ERRORS_OR_NONE}}
 - Пропущенные оси: {{NONE_OR_AXES}}
 - Пропущенные семейства или гибриды: {{NONE_OR_SF_IDS_AND_DESCRIPTION}}
 - Результат разрешения: {{ADDED_EXCLUDED_WITH_EVIDENCE_OR_NONE}}

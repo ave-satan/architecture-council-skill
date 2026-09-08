@@ -101,15 +101,33 @@ Follow the stage order and gates in the protocol:
     validation, and Human Review handoff.
 
 For L2-L3, require a bounded solution-space map and an independent challenger.
-Map relevant axes such as control plane, data plane, transport, topology,
-synchronization, rendezvous, fallback, and external dependencies. Do not expand
-the complete Cartesian product; record materially distinct families and an
-evidence- or requirement-backed reason for excluding a relevant family.
+Separate user outcomes, environment facts, explicit constraints, preferences and
+implementation hypotheses. Preserve original wording and provenance. A mentioned
+technology is not automatically mandatory; an explicit requirement needs no magic
+keyword. Before deep work, clarify ambiguous constraints that exclude major
+families: what need do they protect and which part of the solution do they cover?
+Compare conditional interpretations read-only while awaiting clarification; never
+silently weaken a prohibition or choose/execute a dependent solution without
+confirmation. Do not re-ask settled constraints.
+
+Derive the necessary functions from this task, not a fixed domain-specific list.
+Explore whole ready-made solutions, configuration, composition with small adapters,
+custom implementation and elimination of unnecessary components. Investigate real
+available mechanisms for relevant families, with primary evidence. These are search
+lenses, not a quota or permission to install. Give materially different families a
+comparable first assessment before deep experiments: fit, reuse, custom work,
+critical unknown and cheapest check. A name in the map is not enough. Compare
+outcomes and invariants rather than demanding one candidate's internal contract
+from every alternative. Revisit the family choice before expensive continuation;
+sunk effort is not a reason to persist and rejecting on cost need not prove
+technical impossibility. Keep this in the existing Charter and options map.
 
 Use independent agents for the initial specialist conclusions, Solution Space
 Challenge, Alternative Architect, Arbiter, and Red Team when agent delegation is
-available and allowed. Give the challenger requirements, constraints, and
-specialist findings, but hide the preferred candidate. Record stable `actor_id`,
+available and allowed. Give the challenger original user statements, requirements with constraint
+provenance, and specialist findings, but hide the preferred candidate. Ask it to
+challenge the framing itself, unsupported exclusions and restrictions applied
+to the whole solution when they concern only one function. Record stable `actor_id`,
 role, input revision/hash, output, and gate result in `process-ledger.md`.
 For L1 follow the explicit reduced profile in protocol section 3.2: no mandatory
 Solution Space Challenge, Preliminary Arbitration, or Red Team. Its Coverage
