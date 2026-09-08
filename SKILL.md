@@ -256,6 +256,19 @@ protocol section 10 and preserve existing authorization within its scope.
 Compare conditional scenarios while requirements are open; do not block useful
 comparison to make the user choose a mechanism prematurely.
 
+Before device execution, group independent checks sharing setup into one bounded
+session: prepare a hypothesis/case matrix, install once, reuse granted permissions
+within their scope, run isolated cases, then clean up once. This is the
+orchestrator's responsibility, not something the user must request. Use separate
+sessions when an earlier result determines the next experiment or isolation,
+safety or authorization requires it; explain the dependency. Define per-case
+outcomes and reset, case-local failures versus session-wide stop conditions,
+and a total session limit before starting. A failed case should not cancel
+independent cases unless isolation, safety or trustworthy measurement is lost.
+Batching does not authorize additional cases or require simultaneous execution.
+Keep the runner proportional: group existing commands where possible rather
+than building a general test framework for one short experiment.
+
 Keep final-decision.md as the current decision summary with scope, applicable
 review links and the next gate. After material input changes, update affected
 normative documents and classification together; explicitly supersede obsolete
