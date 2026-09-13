@@ -1,15 +1,10 @@
-version: 1.2.8
+version: 1.5.1
 protocol: ../references/protocol.md
+package_format: sectioned-v1
 
 artifact_language:
   required: true
   source: user
-  package_field: artifact_language
-  applies_to:
-    - human_readable_documents
-    - user_questions
-    - specialist_reviews
-    - diagram_labels_and_explanations
   preserve_verbatim:
     - technical_identifiers
     - code_and_commands
@@ -17,43 +12,23 @@ artifact_language:
     - external_contracts
 
 required_for_l1:
-  - feature-package/feature-classification.md
-  - feature-package/evidence/arbiter-review.md
   - feature-package/README.md
-  - feature-package/decision-brief.md
   - feature-package/feature-charter.md
   - feature-package/requirements.md
   - feature-package/target-architecture.md
-  - feature-package/evolution-plan.md
   - feature-package/delivery-plan.md
-  - feature-package/verification-plan.md
-  - feature-package/risks-and-assumptions.md
-  - feature-package/process-ledger.md
-  - feature-package/final-decision.md
-  - feature-package/human-review.md
-  - feature-package/implementation-handoff.md
-  - feature-package/evidence/package-validation.md
+  - feature-package/evidence/council-review.md
 
 required_for_l2:
   - feature-package/README.md
-  - feature-package/decision-brief.md
-  - feature-package/feature-classification.md
   - feature-package/feature-charter.md
   - feature-package/requirements.md
   - feature-package/target-architecture.md
-  - feature-package/evolution-plan.md
   - feature-package/delivery-plan.md
-  - feature-package/verification-plan.md
-  - feature-package/risks-and-assumptions.md
-  - feature-package/process-ledger.md
-  - feature-package/final-decision.md
-  - feature-package/human-review.md
-  - feature-package/implementation-handoff.md
-  - feature-package/evidence/architecture-options.md
-  - feature-package/evidence/preliminary-decision.md
-  - feature-package/evidence/red-team-review.md
-  - feature-package/evidence/arbiter-review.md
-  - feature-package/evidence/package-validation.md
+  - feature-package/evidence/council-review.md
+
+required_for_implementation_plan:
+  - feature-package/implementation-plan.md
 
 required_for_brownfield:
   - feature-package/current-system.md
@@ -61,16 +36,44 @@ required_for_brownfield:
 required_for_greenfield:
   - feature-package/system-context.md
 
-additional_for_l3:
+# Validator-only compatibility for packages created before sectioned-v1.
+legacy_required_for_l1:
+  - feature-package/feature-classification.md
+  - feature-package/evidence/arbiter-review.md
+  - feature-package/README.md
+  - feature-package/decision-brief.md
+  - feature-package/feature-charter.md
+  - feature-package/requirements.md
+  - feature-package/target-architecture.md
+  - feature-package/delivery-plan.md
+  - feature-package/verification-plan.md
+  - feature-package/process-ledger.md
+  - feature-package/human-review.md
+  - feature-package/evidence/package-validation.md
+
+legacy_required_for_l2:
+  - feature-package/README.md
+  - feature-package/decision-brief.md
+  - feature-package/feature-classification.md
+  - feature-package/feature-charter.md
+  - feature-package/requirements.md
+  - feature-package/target-architecture.md
+  - feature-package/delivery-plan.md
+  - feature-package/verification-plan.md
+  - feature-package/process-ledger.md
+  - feature-package/human-review.md
+  - feature-package/evidence/architecture-options.md
+  - feature-package/evidence/preliminary-decision.md
+  - feature-package/evidence/red-team-review.md
+  - feature-package/evidence/arbiter-review.md
+  - feature-package/evidence/package-validation.md
+
+legacy_additional_for_l3:
   - feature-package/evidence/threat-model.md
   - feature-package/evidence/migration-rehearsal.md
   - feature-package/evidence/formal-risk-acceptance.md
 
-required_for_verbose:
-  - feature-package/evidence/process-log.jsonl
-  - feature-package/evidence/process-log.md
-  - feature-package/evidence/verbose-review.md
-
+# Validator-only legacy mappings. Sectioned packages keep role outputs in Council Review.
 conditional_by_role:
   intake_requirements:
     - feature-package/requirements.md
@@ -104,32 +107,24 @@ conditional_by_role:
     - feature-package/evidence/specialist-reviews/evolution-integration.md
 
 conditional_evidence:
-  conflict:
-    - feature-package/evidence/conflict.template.md
-  human_decision:
-    - feature-package/evidence/human-decision-request.template.md
+  architecture_decision:
+    - feature-package/adr/ADR-NNN-template.md
   spike:
     - feature-package/evidence/spike.template.md
   benchmark:
     - feature-package/evidence/benchmark.template.md
-  architecture_decision:
-    - feature-package/adr/ADR-NNN-template.md
-  dry_run:
-    - feature-package/pilot-observations.md
 
 validation:
   command: python3 validate_package.py PACKAGE --level LEVEL --context CONTEXT --language LANGUAGE
   required_checks:
-    - required_artifacts
-    - unresolved_placeholders
+    - required_sections
     - relative_links
     - role_coverage_and_independence
     - solution_space_coverage
     - status_and_revision_consistency
     - full_traceability_chain
     - artifact_language
-    - readme_navigation_and_next_actions
     - inline_diagram_metadata
-    - verbose_diagnostics
+    - current_validation_evidence
   design_run_required_value:
     implementation_start: NOT_REQUESTED

@@ -11,41 +11,23 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Целевая архитектура
 
-## Scope и цели
-
-- Бизнес-цели: {{BR_IDS}}
-- Включённый scope: {{SUMMARY_OR_LINK}}
-- Исключённый scope: {{SUMMARY_OR_LINK}}
-- Драйверы качества: {{QA_IDS}}
-
-## Архитектура в одном взгляде
+- Цели / scope / non-goals: {{BR_QA_IDS_AND_CHARTER_LINK}}
+- Ключевой механизм и границы: {{END_TO_END_SUMMARY}}
 
 ```mermaid
 %% ac_id: target-container
 %% ac_state: target
 %% ac_purpose: обзор целевой архитектуры {{FEATURE_NAME}}
 %% ac_scope: {{SCOPE}}
-%% ac_legend: сплошная стрелка — синхронная или обязательная связь
+%% ac_legend: стрелка — обязательная связь
 %% ac_revision: {{REVISION}}
 %% ac_normative: target-architecture.md
 flowchart LR
-    User[{{ACTOR}}]
-    UI[{{UI_OR_CLIENT}}]
-    API[{{API_COMPONENT}}]
-    Worker[{{WORKER_OR_SERVICE}}]
-    DB[({{SYSTEM_OF_RECORD}})]
-    External[{{EXTERNAL_SYSTEM_OR_STORAGE}}]
-
-    User --> UI
-    UI --> API
-    API --> DB
-    Worker --> DB
-    Worker --> External
+    User[{{ACTOR}}] --> Client[{{CLIENT}}] --> Core[{{CORE}}] --> Store[({{SYSTEM_OF_RECORD}})]
+    Core --> External[{{EXTERNAL_OR_OPTIONAL}}]
 ```
 
-## Ключевые end-to-end сценарии
-
-### {{SCN_ID}}: {{NAME}}
+## Ключевой сценарий {{SCN_ID}}
 
 ```mermaid
 %% ac_id: key-flow
@@ -58,129 +40,59 @@ flowchart LR
 sequenceDiagram
     actor User as {{ACTOR}}
     participant Client as {{CLIENT}}
-    participant API as {{API}}
-    participant Core as {{CORE_COMPONENT}}
-    participant Store as {{STORE_OR_EXTERNAL_SYSTEM}}
-
+    participant Core as {{CORE}}
+    participant Store as {{STORE_OR_EXTERNAL}}
     User->>Client: {{ACTION}}
-    Client->>API: {{REQUEST}}
-    API->>Core: {{COMMAND}}
+    Client->>Core: {{COMMAND}}
     Core->>Store: {{PERSIST_OR_CALL}}
     Store-->>Core: {{RESULT}}
-    Core-->>API: {{RESULT}}
-    API-->>Client: {{OBSERVABLE_RESPONSE}}
-    Client-->>User: {{OUTCOME}}
+    Core-->>User: {{OBSERVABLE_OUTCOME}}
 ```
 
-1. {{STEP}}
-2. {{STEP}}
-3. {{OUTCOME}}
+## Компоненты и контракты
 
-## Компоненты и ответственность
-
-| Компонент | Ответственность | Владеет | Не должен владеть | Требования |
+| Компонент/контракт | Ответственность и семантика | Владеет / граница | Совместимость | Требования |
 |---|---|---|---|---|
-| {{COMPONENT}} | {{RESPONSIBILITY}} | {{DATA_CAPABILITY}} | {{BOUNDARY}} | {{REQ_IDS}} |
+| {{ITEM}} | {{RESPONSIBILITY}} | {{OWNERSHIP}} | {{RULE}} | {{REQ_IDS}} |
 
-## Контракты
+## Модель данных
 
-| Контракт | Производитель | Потребитель | Семантика | Совместимость | Требования |
+Опиши только затронутые данные. Если модель не меняется, зафиксируй это и дай
+ссылку на актуальное описание текущей системы.
+
+| Сущность / объект-значение / сообщение | Назначение и владелец | Существенные поля, типы и обязательность | Ключи, связи и кардинальность | Инварианты, состояния и жизненный цикл | Требования |
 |---|---|---|---|---|---|
-| {{API_EVENT_JOB}} | {{PRODUCER}} | {{CONSUMER}} | {{SEMANTICS}} | {{RULE}} | {{REQ_IDS}} |
-
-## Доменная модель и состояния
-
-- Сущности/value objects: {{DESCRIPTION_OR_LINK}}
-- Инварианты: {{INV_IDS}}
-- State machine: {{LINK_OR_NOT_APPLICABLE}}
-- Границы владения: {{DESCRIPTION}}
-
-## Данные и консистентность
-
-- System of record: {{DESCRIPTION}}
-- Транзакционные границы: {{DESCRIPTION}}
-- Модель консистентности: {{DESCRIPTION}}
-- Идемпотентность/deduplication: {{DESCRIPTION}}
-- Retention/deletion: {{DESCRIPTION}}
-- Миграция данных: [Evolution Plan](evolution-plan.md)
-
-## Безопасность и приватность
-
-- Trust boundaries: {{DESCRIPTION_OR_DIAGRAM}}
-- Аутентификация: {{DESCRIPTION}}
-- Авторизация: {{DESCRIPTION}}
-- Чувствительные данные: {{DESCRIPTION}}
-- Защита от abuse: {{DESCRIPTION}}
-- Аудит: {{DESCRIPTION}}
-- Связанные требования/reviews: {{LINKS}}
-
-## Производительность и надёжность
-
-| Budget | Цель | Механизм | Evidence | Эксплуатационный сигнал |
-|---|---|---|---|---|
-| {{QA_ID}} | {{TARGET}} | {{DESIGN_MECHANISM}} | {{BENCHMARK_OR_ANALYSIS}} | {{METRIC}} |
-
-### Failure modes
-
-| Отказ | Ожидаемое поведение | Восстановление | Влияние на пользователя | Проверка |
-|---|---|---|---|---|
-| {{FAILURE}} | {{BEHAVIOR}} | {{RECOVERY}} | {{IMPACT}} | {{VER_ID}} |
-
-## Эксплуатация и наблюдаемость
-
-- Топология deployment: {{DESCRIPTION_OR_DIAGRAM}}
-- Логи: {{REQUIRED_EVENTS_AND_FIELDS}}
-- Метрики: {{METRICS}}
-- Трассировка/correlation: {{DESCRIPTION}}
-- Alerts: {{CONDITIONS}}
-- Runbooks/ручное восстановление: {{LINKS_OR_PLAN}}
-
-## Границы реализации
-
-- Требуемые изменения: {{SUMMARY}}
-- Переиспользуемые паттерны: {{PATTERNS}}
-- Новые зависимости/инфраструктура: {{ITEMS_AND_JUSTIFICATION}}
-- Явные non-goals: {{ITEMS}}
-
-## Ключевые решения
-
-| Решение | ADR | Статус |
-|---|---|---|
-| {{DECISION}} | {{ADR_LINK}} | {{STATUS}} |
-
-## Предположения, риски и открытые вопросы
-
-См. [Risks and Assumptions](risks-and-assumptions.md).
-
-## Feasibility evidence
-
-| Evidence ID | No-go | Статус | Результат/ссылка | Последствие для дизайна |
-|---|---|---|---|---|
-| {{EVIDENCE_ID}} | {{yes/no}} | {{PLANNED|AUTHORIZED|COMPLETE|INCONCLUSIVE}} | {{LINK}} | {{IMPACT}} |
-
-Пока no-go evidence не выполнен, maturity не выше `DESIGN_CANDIDATE`.
-
-## История ревизий
-
-| Ревизия | Дата | Trigger/findings | Изменения | Автор |
-|---|---|---|---|---|
-| {{REV}} | {{DATE}} | {{FINDING_IDS}} | {{SUMMARY}} | {{OWNER}} |
-
-## Состояния (при необходимости)
+| {{DATA_ITEM}} | {{PURPOSE_AND_OWNER}} | {{FIELDS_TYPES_OPTIONALITY}} | {{KEYS_RELATIONS_CARDINALITY}} | {{INVARIANTS_STATES_RETENTION_EVOLUTION}} | {{REQ_IDS}} |
 
 ```mermaid
-%% ac_id: target-state
+%% ac_id: data-model
 %% ac_state: target
-%% ac_purpose: жизненный цикл {{ENTITY}}
-%% ac_scope: {{SCOPE}}
-%% ac_legend: стрелка — допустимый переход, подпись — событие
+%% ac_purpose: показать затронутые сущности данных и их связи
+%% ac_scope: {{DATA_MODEL_SCOPE}}
+%% ac_legend: связь показывает кардинальность целевой модели
 %% ac_revision: {{REVISION}}
 %% ac_normative: target-architecture.md
-stateDiagram-v2
-    [*] --> {{INITIAL_STATE}}
-    {{INITIAL_STATE}} --> {{ACTIVE_STATE}}: {{EVENT}}
-    {{ACTIVE_STATE}} --> {{SUCCESS_STATE}}: {{EVENT}}
-    {{ACTIVE_STATE}} --> {{FAILURE_STATE}}: {{EVENT}}
-    {{FAILURE_STATE}} --> {{ACTIVE_STATE}}: {{RETRY_EVENT}}
-    {{SUCCESS_STATE}} --> [*]
+erDiagram
+    {{ENTITY_A}} ||--o{ {{ENTITY_B}} : "{{RELATION}}"
 ```
+
+Для DTO, сообщений, объектов-значений или моделей документов замени `erDiagram`
+на `classDiagram`. Если модель данных не меняется, удали схему и таблицу,
+зафиксируй отсутствие изменений и дай ссылку на актуальную текущую модель.
+
+## Данные, безопасность и надёжность
+
+| Область | Решение / инвариант | Failure и recovery | Проверка / сигнал |
+|---|---|---|---|
+| Данные и консистентность | {{SOR_TRANSACTIONS_IDEMPOTENCY_RETENTION}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Security/privacy | {{TRUST_AUTH_SENSITIVE_DATA_ABUSE}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Performance/reliability | {{BUDGET_AND_MECHANISM}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Operations | {{DEPLOYMENT_LOGS_METRICS_RUNBOOK}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+
+## Реализация и evidence
+
+- Изменения / reuse / новые зависимости: {{BOUNDED_CHANGES_AND_JUSTIFICATION}}
+- Переход, rollout и rollback: [delivery-plan.md](delivery-plan.md)
+- Риски и допущения: [requirements.md](requirements.md)
+- ADR только для самостоятельных решений: {{ADR_LINKS_OR_NONE}}
+- No-go evidence и влияние на maturity: {{EVIDENCE_STATUS_AND_LINKS}}

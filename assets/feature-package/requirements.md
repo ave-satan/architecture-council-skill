@@ -8,131 +8,43 @@ artifact_language: "{{USER_LANGUAGE}}"
 updated_at: "{{YYYY-MM-DD}}"
 ---
 
-# Каталог требований
+# Требования, риски и допущения
 
-## Соглашения
+Для каждого требования укажи `Priority`, `Origin`, источник/владельца и проверяемый
+критерий. Разделяй `BR`, `FR`, `QA`, `INV`, `CON`, `TR`; не превращай предпочтение
+или гипотезу реализации в обязательное ограничение.
 
-- Types: `BR`, `FR`, `QA`, `INV`, `CON`, `TR`.
-- Origin: `stated`, `discovered`, `derived`, `proposed`.
-- Priority: `MUST`, `SHOULD`, `MAY`.
-- Approval: `approved`, `needs_approval`, `rejected`, `superseded`.
+## BR-001: {{TITLE}}
 
-## Бизнес-требования
+- Priority / Origin: `{{MUST|SHOULD|MAY}}` / `{{stated|discovered|derived|proposed}}`
+- Источник / владелец: {{SOURCE_AND_OWNER}}
+- Формулировка: {{ATOMIC_REQUIREMENT}}
+- Приёмка: {{MEASURABLE_CRITERION}}
 
-### BR-001: {{TITLE}}
+## FR-001: {{TITLE}}
 
-- Формулировка: {{ATOMIC_BUSINESS_OUTCOME}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Сценарии: {{SCN_IDS}}
-- Критерий приёмки: {{OBSERVABLE_SUCCESS}}
+- Priority / Origin: `{{MUST|SHOULD|MAY}}` / `{{stated|discovered|derived|proposed}}`
+- Источник / владелец: {{SOURCE_AND_OWNER}}
+- Формулировка: {{ATOMIC_REQUIREMENT}}
+- Приёмка: {{MEASURABLE_CRITERION}}
 
-## Функциональные требования
+{{ADD_QA_INV_CON_TR_SECTIONS_ONLY_WHEN_THEY_EXIST_USING_THE_SAME_COMPACT_SHAPE}}
 
-### FR-001: {{TITLE}}
+## Риски, допущения и условия
 
-- Формулировка: {{OBSERVABLE_BEHAVIOR}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Производное от: {{BR_OR_FR_IDS}}
-- Сценарии: {{SCN_IDS}}
-- Критерий приёмки: {{TESTABLE_CRITERION}}
-
-## Атрибуты качества
-
-### QA-PERF-001: {{TITLE}}
-
-- Категория: `{{performance|reliability|availability|security|scalability|maintainability|observability}}`
-- Формулировка: {{MEASURABLE_QUALITY_REQUIREMENT}}
-- Условия/нагрузка: {{CONDITION}}
-- Цель: {{NUMERIC_TARGET_OR_EXPLICIT_TBD}}
-- Измерение: {{HOW_AND_WHERE}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Производное от: {{REQUIREMENT_IDS}}
-- Сценарии: {{SCN_IDS}}
-- Критерий приёмки: {{TESTABLE_CRITERION}}
-
-## Инварианты
-
-### INV-001: {{TITLE}}
-
-- Формулировка: {{ALWAYS_TRUE_RULE}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Производное от: {{REQUIREMENT_IDS}}
-- Сценарии: {{SCN_IDS}}
-- Критерий приёмки: {{HOW_TO_PROVE}}
-
-## Ограничения
-
-### CON-001: {{TITLE}}
-
-- Формулировка: {{SOLUTION_SPACE_CONSTRAINT}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Производное от: {{REQUIREMENT_IDS}}
-- Сценарии: {{SCN_IDS}}
-- Действует до: {{DATE_STAGE_OR_PERMANENT}}
-- Последствие: {{IMPACT}}
-- Критерий приёмки: {{HOW_TO_PROVE_OR_NA}}
-
-## Переходные требования
-
-### TR-001: {{TITLE}}
-
-- Формулировка: {{MIGRATION_OR_COEXISTENCE_BEHAVIOR}}
-- Приоритет: `{{MUST|SHOULD|MAY}}`
-- Происхождение: `{{ORIGIN}}`
-- Источник: {{SOURCE}}
-- Владелец: {{OWNER}}
-- Согласование: `{{STATUS}}`
-- Производное от: {{REQUIREMENT_IDS}}
-- Сценарии: {{SCN_IDS}}
-- Применяется на этапе: {{TRANSITION_STAGE}}
-- Условие удаления: {{WHEN_NO_LONGER_APPLIES}}
-- Критерий приёмки: {{HOW_TO_PROVE}}
+| ID | Тип | Формулировка и последствие | Владелец | Проверка/mitigation | Статус |
+|---|---|---|---|---|---|
+| {{RISK_OR_ASM_OR_COND_ID}} | {{RISK|ASSUMPTION|CONDITION}} | {{ITEM_AND_IMPACT}} | {{OWNER}} | {{EVIDENCE_OR_ACTION}} | {{OPEN|VALIDATED|MITIGATED|ACCEPTED|CLOSED}} |
 
 ## Матрица трассировки
 
 <!-- AC:TRACEABILITY -->
-
-| Бизнес-цель | Требование | Сценарий | Архитектура/ADR | Инкремент | Проверка | Эксплуатационный сигнал |
+| BR | Requirement | SCN | Architecture/ADR | INC | VER | SIG |
 |---|---|---|---|---|---|---|
-| {{BR_ID}} | {{REQ_ID}} | {{SCN_ID}} | {{LINK_OR_ADR}} | {{INC_ID}} | {{VER_ID}} | {{SIG_ID_OR_JUSTIFIED_NA}} |
+| {{BR_ID_OR_NA}} | {{REQUIREMENT_ID_OR_LINK}} | {{SCN_ID_OR_NA}} | {{TARGET_OR_ADR_LINK_OR_NA}} | {{INC_ID_OR_NA}} | {{VER_ID_OR_NA}} | {{SIG_ID_OR_NA}} |
 
-Каждая колонка обязательна. `N/A; reason=обоснование; owner=владелец` допустим в неприменимых звеньях,
-кроме самого Requirement. Все объявленные требования должны иметь строку.
-BR/SCN/INC/VER/SIG ссылаются на реальные определения; Architecture/ADR —
-Markdown-ссылка на целевую архитектуру/активный ADR или ID активного ADR.
-VER обязан явно перечислять проверяемый requirement ID. Машинные IDs и markers
-сохраняются при переводе, а их пояснения пишутся на языке пользователя.
+Неприменимая связь: `N/A; reason=...; owner=...`.
 
-## Противоречия и пробелы
+## Gate
 
-| ID | Требования | Проблема | Владелец | Решение/статус |
-|---|---|---|---|---|
-| {{ID}} | {{REQ_IDS}} | {{DESCRIPTION}} | {{OWNER}} | {{STATUS_OR_LINK}} |
-
-## Результат gate
-
-- Result: `{{PASS|REWORK|BLOCKED}}`
-- Unapproved `MUST`: {{COUNT_AND_IDS_OR_NONE}}
-- Unresolved `MUST` conflicts: {{COUNT_AND_IDS_OR_NONE}}
-- Incomplete traceability chains: {{COUNT_AND_IDS_OR_NONE}}
-- Next stage: {{STAGE}}
+{{PASS_REWORK_OR_BLOCKED_WITH_ONLY_MATERIAL_GAPS}}

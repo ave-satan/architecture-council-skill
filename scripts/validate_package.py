@@ -1,33 +1,25 @@
 #!/usr/bin/env python3
-"""Структурная проверка Architecture Package Protocol v1.2.8 без зависимостей."""
+"""Структурная проверка Architecture Package Protocol v1.5.1 без зависимостей."""
 
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from diagnostics import check_verbose_diagnostics
+from implementation_plan import check_implementation_plan
 from package_contract import (frontmatter, selected_roles, check_links, check_readme,
     check_status_consistency, check_traceability, check_roles, check_solution_space_coverage,
-    check_diagrams, check_evidence_locations, check_classification, mandatory_roles)
+    check_diagrams, check_evidence_locations, check_classification, check_current_validation,
+    compact_package, mandatory_roles)
 
 
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]+\}\}")
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 FRONTMATTER_RE = re.compile(r"^---\s*$\n(.*?)\n---\s*$", re.DOTALL | re.MULTILINE)
-SENSITIVE_LOG_VALUE_PATTERNS = (
-    re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", re.IGNORECASE),
-    re.compile(r"\b(?:api[_-]?key|password|secret|access[_-]?token)\s*[:=]\s*\S+", re.IGNORECASE),
-    re.compile(r"\bauthorization\s*:\s*bearer\s+\S+", re.IGNORECASE),
-)
-
-
 class Report:
     def __init__(self) -> None:
         self.errors: list[str] = []
@@ -96,13 +88,15 @@ def check_required_files(
     report: Report,
 ) -> None:
     base_level = "l2" if level == "L3" else level.casefold()
-    required = list(manifest_flat.get(f"required_for_{base_level}", []))
+    prefix = "" if compact_package(package) else "legacy_"
+    required = list(manifest_flat.get(f"{prefix}required_for_{base_level}", []))
     if level in {"L1", "L2", "L3"}:
         required += manifest_flat.get(f"required_for_{context}", [])
     if level == "L3":
-        required += manifest_flat.get("additional_for_l3", [])
-    for role in sorted(roles):
-        required += manifest_nested.get("conditional_by_role", {}).get(role, [])
+        required += manifest_flat.get(f"{prefix}additional_for_l3", [])
+    if not compact_package(package):
+        for role in sorted(roles):
+            required += manifest_nested.get("conditional_by_role", {}).get(role, [])
 
     for value in sorted(set(required)):
         path = package / manifest_to_package_path(value)
@@ -145,6 +139,10 @@ def check_language(package: Path, language: str, report: Report, template_mode: 
         if ".template." in path.name or (path.name == "README.md" and path.parent != package):
             continue
         metadata = frontmatter(read_text(path))
+        relative = path.relative_to(package)
+        if (relative.parts[0] in {"adr", "evidence"}
+                and metadata.get("status") == "SUPERSEDED"):
+            continue
         if metadata.get("artifact_language") != language:
             report.error(
                 f"{path.relative_to(package)} не фиксирует artifact_language={language!r}"
@@ -153,6 +151,12 @@ def check_language(package: Path, language: str, report: Report, template_mode: 
     if language not in {"ru", "en"}:
         return
     for path in list(package.rglob("*.md")) + list(package.rglob("*.mmd")):
+        if path.suffix == ".md":
+            relative = path.relative_to(package)
+            metadata = frontmatter(read_text(path))
+            if (relative.parts[0] in {"adr", "evidence"}
+                    and metadata.get("status") == "SUPERSEDED"):
+                continue
         text = prose_for_language(read_text(path))
         cyrillic = len(re.findall(r"[А-Яа-яЁё]", text))
         latin = len(re.findall(r"[A-Za-z]", text))
@@ -171,15 +175,13 @@ def main() -> int:
     parser.add_argument("--level", choices=("L1", "L2", "L3"), required=True)
     parser.add_argument("--context", choices=("greenfield", "brownfield"), required=True)
     parser.add_argument("--language", required=True, help="Код языка, например ru или en")
-    parser.add_argument("--roles", help="Role IDs через запятую; иначе читаются из process-ledger.md")
+    parser.add_argument("--roles", help="Role IDs через запятую; иначе читаются из Council Review (legacy: process-ledger.md)")
+    parser.add_argument('--implementation-plan', action='store_true', help='Требовать индекс задач реализации')
     parser.add_argument("--phase", choices=("draft", "review"), default="review")
+    parser.add_argument("--validation-candidate", action="store_true",
+                        help="Проверить будущий review PASS до фиксации validation section; не означает handoff readiness")
     parser.add_argument("--template-mode", action="store_true", help="Разрешить placeholders шаблона")
     parser.add_argument("--allow-missing-render", action="store_true")
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Требовать и проверить VERBOSE diagnostic artifacts",
-    )
     args = parser.parse_args()
 
     package = args.package.resolve()
@@ -191,6 +193,8 @@ def main() -> int:
     flat, nested = parse_manifest_lists(skill_root / "assets" / "template-manifest.yaml")
     roles = selected_roles(package, args.roles)
     report = Report()
+    check_implementation_plan(package, report, args.implementation_plan,
+                              draft=args.phase == 'draft', template=args.template_mode)
 
     if args.template_mode or args.phase == "review":
         check_required_files(package, flat, nested, args.level, args.context, roles | mandatory_roles(args.level, args.context), report)
@@ -203,12 +207,16 @@ def main() -> int:
         check_classification(package, args.level, args.context, roles, report, args.template_mode)
         check_language(package, args.language, report, args.template_mode)
     check_links(package, report, args.template_mode or args.phase == "draft", args.allow_missing_render)
-    check_verbose_diagnostics(package, flat, report, args.template_mode, args.verbose)
-    check_diagrams(package, report, args.allow_missing_render, args.context)
+    check_current_validation(package, report, args.template_mode,
+                             review_phase=args.phase == "review",
+                             validation_candidate=args.validation_candidate)
+    check_diagrams(package, report, args.allow_missing_render, args.context, args.level)
     if not args.template_mode:
         check_evidence_locations(package, args.context, report)
     if args.phase == "draft" or args.template_mode:
         print("Проверен только черновик/шаблон; это не PASS готовности к handoff.")
+    if args.validation_candidate:
+        print("Проверен кандидат validation section; зафиксируй PASS для текущей revision и повтори обычную review-проверку. Это ещё не handoff readiness.")
 
     for message in report.errors:
         category = "GATE" if message in report.gates else "STRUCTURE"

@@ -37,7 +37,7 @@ updated_at: "{{YYYY-MM-DD}}"
 - {{RISK_ID_FROM_RISKS_AND_ASSUMPTIONS_OR_NONE}}
 
 Используй только нормативные `RISK-NNN` из
-[Risks and Assumptions](../risks-and-assumptions.md); локальные сокращения и
+[Requirements: risks and assumptions](../requirements.md); локальные сокращения и
 переопределение risk ID запрещены.
 
 ## Решение Security reviewer

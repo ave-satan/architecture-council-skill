@@ -1,6 +1,6 @@
 ---
 name: architecture-council
-description: "Design substantial L1-L3 features in greenfield or brownfield projects through requirements clarification, independent specialist reviews, viable architecture alternatives, business-led arbitration, Red Team, human review, and a design-only implementation handoff. Use when the user asks to architect or design a large, risky, cross-component, security-sensitive, performance-sensitive, or hard-to-reverse feature. Do not use for implementation-only requests, small local changes, or ordinary code review."
+description: "Design substantial L1-L3 features through independent reviews, architecture alternatives, arbitration and human review. Also prepare or update executable implementation tasks and a delivery roadmap from an existing Architecture Package. Use for substantial architecture design or decomposition of its implementation. Do not use for unrelated implementation-only requests, small local changes or ordinary code review."
 ---
 
 # Architecture Council
@@ -9,6 +9,23 @@ Produce a reviewable Architecture Package for one feature. Treat the Council's
 result as a design recommendation, never as authorization to implement it.
 
 ## Load the protocol
+
+First select the requested mode. For “prepare implementation”, “split this package
+into tasks”, “update the implementation roadmap”, or starting/continuing execution
+of an existing package, read
+[implementation preparation](references/implementation-preparation.md) and the
+[package contract](references/package-contract.md). Use the selected existing
+package; do not initialize another package or rerun the whole Council. Read other
+protocol sections only for unresolved design gates. The rest of this entrypoint
+describes architecture design mode.
+
+“Prepare and start” requests preparation followed by implementation within the
+explicit scope. Finish preparation, resolve applicable prerequisites, then hand
+off to the project's implementation workflow without asking again for the same
+authorization. This skill does not itself define a coding workflow or authorize
+unrequested deployment, external changes or additional work.
+Use the actual user request to determine execution scope; a recommended first
+increment is not a restriction on an authorized whole-feature implementation.
 
 Before taking the first project action, read [references/protocol.md](references/protocol.md)
 completely. It is the normative workflow and gate definition.
@@ -28,8 +45,12 @@ to load into context all at once.
 ## Start the run
 
 1. Determine the user's language and keep every user-facing artifact, question,
-   review, diagram label, and explanation in that language. Preserve code,
-   paths, commands, API names, and external contracts verbatim.
+   review, table heading, diagram label, and explanation in that language.
+   Preserve exact code identifiers, paths, commands, API or model names,
+   configuration values, and external contracts verbatim. Technical exceptions
+   do not permit English connective or descriptive prose: translate ordinary
+   wording around the exact term and avoid mixed-language phrases when a clear
+   local-language equivalent preserves the meaning.
 2. Confirm that the user is asking for architecture design. If they only ask to
    load or prepare the skill, wait for the feature-design command.
 3. Establish the feature boundary, business goal, greenfield or brownfield
@@ -51,10 +72,6 @@ to load into context all at once.
      --roles domain_architect,implementation_maintainability
    ```
 
-For a development or dry-run session, enable diagnostic logging only when the
-user explicitly asks for verbose diagnostics. Add `--verbose` to the initializer.
-The default remains `NORMAL`.
-
 The bundled templates are written in Russian. When the user's language is not
 Russian, translate every copied human-readable template and diagram label into
 the user's language immediately after initialization and before presenting or
@@ -72,6 +89,15 @@ rename them without updating their references as a separate scoped change.
 
 Do not overwrite a non-empty target. If a package already exists, inspect it and
 continue its current architecture revision instead of reinitializing it.
+
+Before changing an existing package after a material requirement/evidence change,
+run the recovery preflight in the continuation contract. Keep the last coherent
+revision at its public package path and build the next revision in a hidden sibling
+working copy under `.architecture-council-work/<package-name>/<revision>/`. Do not
+bulk-replace revision strings: historical ADR, evidence, log events, and ledger
+rows are immutable inputs. Promote the working copy only after its full review
+validation passes; an interruption must leave either the old coherent package or
+an explicitly incomplete working copy, never a mixed public package.
 
 ## Enforce the design-only boundary
 
@@ -122,48 +148,39 @@ from every alternative. Revisit the family choice before expensive continuation;
 sunk effort is not a reason to persist and rejecting on cost need not prove
 technical impossibility. Keep this in the existing Charter and options map.
 
+Before a component limitation becomes a proposed scope restriction, check whether
+that component must perform the affected function. Consider useful combinations
+of already discovered capabilities and their compatibility costs. Make the decisive
+tradeoff explicit: user priority, evidence-based consequence, or reversible author
+preference. Do not turn a preferred recovery or operating policy into a requirement.
+
+Use the evidence sufficiency rules in protocol Stage 4, subsection 4.2: documented capabilities,
+environment assumptions and future implementation acceptance are different claims.
+An unrun integration test is not automatically a design blocker. Before blocking,
+name the decision-changing unknown and the smallest dependent scope; continue
+available research and conditional design. Preserve genuine no-go gates and never
+claim runtime readiness from documentation or an accepted risk.
+
 Use independent agents for the initial specialist conclusions, Solution Space
 Challenge, Alternative Architect, Arbiter, and Red Team when agent delegation is
 available and allowed. Give the challenger original user statements, requirements with constraint
 provenance, and specialist findings, but hide the preferred candidate. Ask it to
 challenge the framing itself, unsupported exclusions and restrictions applied
 to the whole solution when they concern only one function. Record stable `actor_id`,
-role, input revision/hash, output, and gate result in `process-ledger.md`.
+role, input revision/hash, section link, and gate result in `evidence/council-review.md`.
 For L1 follow the explicit reduced profile in protocol section 3.2: no mandatory
 Solution Space Challenge, Preliminary Arbitration, or Red Team. Its Coverage
 status is `NOT_APPLICABLE_L1`; an independent final Arbiter remains required.
 
-When `diagnostics_mode` is `VERBOSE`, only the Council Orchestrator appends
-observable events by running:
-
-```bash
-python3 <skill-dir>/scripts/log_event.py <package-directory> \
-  --event role_completed \
-  --status PASS \
-  --stage 3 \
-  --actor-id actor-2 \
-  --role security_privacy \
-  --run-id RUN-SEC-01 \
-  --input-revision architecture-v1 \
-  --artifact evidence/specialist-reviews/security-privacy.md \
-  --summary "Security review завершён; два finding переданы на refinement."
-```
-
-Log stage and role boundaries, gate outcomes, clarification/user-input events,
-revisions, returns, failures, recoveries, validation, and handoff readiness.
-Never log chain-of-thought or hidden reasoning, raw prompts, secrets,
-credentials, tokens, environment variables, unnecessary personal data, full
-source code, or full tool output. Use concise summaries, IDs, hashes, and
-artifact references. Subagents must not append concurrently. Before Human
-Review, complete `evidence/verbose-review.md` from the observable log.
-
-For each dispatched role, record `role_started` and `role_completed` separately
-with the same `run_id`, actual actor, role, and exact input revision/hash from
-the ledger. Record completion before the next dispatch. If registration is late,
-keep `timestamp` as registration time; use `--occurred-at` with `--timing-basis`
-only for an evidenced event time. Never invent a start time from first output.
-On continuation, follow the revision and logging procedure in
+For each completed role, immediately add one `AC:ROLE_RUNS` row with its stable
+`run_id`, actual actor, role, exact input revision/hash, output, gate result and
+real start/completion timestamps. Do not infer timestamps or collapse several
+independent runs into one row. On continuation, follow the revision procedure in
 [package-contract.md](references/package-contract.md#продолжение-прогона).
+For a revised working copy, no specialist other than discovery or intake may
+start until `evidence/revision-impact.md` has `intake_status: FROZEN` for the
+exact target revision after Charter, Requirements, Classification, selected
+roles, and open gates are current.
 
 Never let one actor combine:
 
@@ -198,8 +215,10 @@ an input change rather than falsely labeling it a search failure.
 
 ## Maintain package quality
 
-Use a single default human reading surface: `decision-brief.md`. Aim for
-250–450 words (about one page), shorter for a blocked evidence decision.
+Use the root `README.md` as the single current decision, default human reading
+surface, and compact package index. Aim for 200–350 words for its decision
+content, shorter for a blocked evidence decision; keep navigation brief and
+separate from the decision sections.
 State the goal and recommendation, the decisive tradeoff/nearest alternative,
 all material blockers or risks with consequences, what is actually verified,
 and the concrete decision now needed. Do not omit a material condition to fit
@@ -208,16 +227,37 @@ Use plain language in the body; keep machine statuses and IDs in metadata or
 linked technical documents unless they help the decision. A diagram is optional
 when it explains the decision more clearly than prose.
 
-Keep README as a short navigation index, not another decision summary. Keep
-`human-review.md` as the agent-maintained record of the user's actual answer,
-not a form the user must read or fill out. Full requirements, expert reviews,
-traceability and normative decisions remain available for agents and targeted
-technical review. Do not make them a mandatory reading route for the owner.
-Apply these rules on continuation too: refresh the current brief, preserve
+Keep the `AC:HUMAN_REVIEW` section in README as the record of the user's actual
+answer, not a form the user must fill out. Requirements, reviews and traceability
+remain available through a basic document navigation block for targeted technical
+review. Do not repeat their content in README or make them a mandatory reading
+route for the owner. Do not create `decision-brief.md` in new packages. When a
+sectioned package is revised, merge any current legacy brief into README and
+remove the duplicate after updating links; untouched legacy packages remain valid.
+Apply these rules on continuation too: refresh the current README, preserve
 revision-linked decisions/history, and explain only material changes in chat.
 
+- Write each fact, rationale, risk and status once in its canonical document;
+  elsewhere use a descriptive link. Prefer dense tables and bounded lists over
+  repeated prose. Delete empty headings and inapplicable scaffold.
+- Do not create a file merely because a function is independently validated.
+  Validate stable sections by marker, metadata and provenance. Split a section
+  into a file only for a different lifecycle/owner, a large raw result, or external handoff.
 - Keep requirements atomic and preserve the full chain: source -> requirement ->
   architecture/ADR -> delivery increment -> verification -> production signal.
+- When the feature introduces or changes persisted, exchanged, cached, or derived
+  data, include a bounded reviewable data model in `target-architecture.md`.
+  Cover the affected entities, value objects or messages; important fields and
+  types/optionality; identifiers, uniqueness and indexes; relationships and
+  cardinality; ownership, invariants and states; sensitivity, retention and
+  schema evolution where relevant. Add an inline Mermaid data diagram: use
+  `erDiagram` for entities and cardinalities, or `classDiagram` when DTOs,
+  messages, value objects, or document structures are the clearer model. Keep a
+  compact table beside it for types, nullability, indexes, constraints, retention,
+  and evolution details that the diagram cannot express precisely. Match detail
+  to design maturity and mark unknowns instead of inventing fields. If there is
+  no data-model change, state that briefly and link the relevant current model;
+  no new diagram is required. Do not create a separate model file by default.
 - Keep current state, target state, and evolution path separate.
 - Distinguish facts, inferences, assumptions, recommendations, and unknowns.
 - Give every unresolved risk, assumption, condition, or blocker an owner and a
@@ -253,15 +293,12 @@ python3 <skill-dir>/scripts/validate_package.py <package-directory> \
   --roles domain_architect,implementation_maintainability
 ```
 
-Add `--verbose` when `diagnostics_mode: VERBOSE`.
-
 Use `--phase draft` for an incomplete or BLOCKED package; its success is not
 readiness for handoff. A documented waiver produces a warning, not fake
-independence. If log projection diverges, use `log_event.py PACKAGE
---rebuild-markdown` without appending the event again.
+independence.
 
-Resolve validation errors. Record warnings and actual evidence gaps honestly in
-`evidence/package-validation.md`. Native editor rendering of inline Mermaid is
+Resolve validation errors. Record warnings and actual evidence gaps in the
+`AC:PACKAGE_VALIDATION` section of Council Review. Native editor rendering of inline Mermaid is
 the assumed display path, not an additional verification task for the user.
 
 ## Keep continuation bounded
@@ -287,20 +324,19 @@ Batching does not authorize additional cases or require simultaneous execution.
 Keep the runner proportional: group existing commands where possible rather
 than building a general test framework for one short experiment.
 
-Keep final-decision.md as the current decision summary with scope, applicable
-review links and the next gate. After material input changes, update affected
+Keep README as the current decision, basic package navigation, and next gate.
+Keep risks and assumptions in requirements.md, and the
+current-to-target path, rollout and rollback in delivery-plan.md. After material input changes, update affected
 normative documents and classification together; explicitly supersede obsolete
 claims. Preserve useful evidence instead of restarting the whole package.
-Keep verbose-review.md as a compact current retrospective (about 300–600 words),
-not a second event log. Archive a prior summary only at a meaningful checkpoint;
-do not copy it on every turn. Reuse immutable inputs by revision/hash, saving
+Reuse immutable inputs by revision/hash, saving
 unrecoverable mutable inputs once. Do not duplicate frozen copies or repeatedly
 recount the full inventory. Validate changed artifacts during work and run the
 full applicable check before handoff; repeat only for new changes or concerns.
-For each new Markdown evidence file, preserve revision/language metadata and
-clickable references at creation. Keep package-validation.md as one dated current
-result with phase, input snapshot, structural errors, open gates and warnings;
-link prior results instead of appending an endless history.
+For each separately justified evidence file, preserve revision/language metadata
+and link it from Council Review. Keep one active section per role; preserve a
+superseded section/file only when later decisions depend on it. A revision/hash
+reference replaces copied input text whenever that input is reproducible.
 
 ## Finish the design run
 
@@ -315,16 +351,16 @@ End with a concise, self-contained summary in the user's language that states:
 - the concrete decision or next action relevant now; implementation still
   requires its own explicit command after architecture approval.
 
-Default to one link to the current decision brief and the one relevant decision
-or next action, normally within 150 words. Explain status in ordinary language;
+Default to one link to the current decision and the one relevant decision or
+next action, normally within 120 words. Explain status in ordinary language;
 do not recite every metadata field or list every possible action. Link extra
 documents only when requested or necessary for that decision. The user may
 answer in chat; record their answer and source yourself without inventing approval.
 
 An approved revision can still be reviewed elsewhere. Any material change to
 requirements, architecture, or evidence creates a new revision and returns the
-package to Human Review. `implementation-handoff.md` is an instruction for a
-future implementation run, not permission to begin one.
+package to Human Review. Create `implementation-plan.md` only when implementation
+preparation is requested; it is a plan/instruction, not permission to begin work.
 
 ## Package navigation
 
@@ -333,7 +369,7 @@ link with a descriptive label, including prose, tables, briefs, ADRs and evidenc
 Resolve paths from the referring document (`../requirements.md` inside evidence).
 Link specific requirements, findings and sections to existing anchors; add stable
 explicit anchors when needed. Plain filenames, backticked paths and bare IDs do
-not replace navigation links. Keep machine-readable fields, JSONL and code syntax
+not replace navigation links. Keep machine-readable fields and code syntax
 unchanged; provide navigation in the surrounding Markdown. Link only artifacts
 that exist in the selected package profile; describe absent optional artifacts as
 not applicable. Check local link targets and anchors before handoff.

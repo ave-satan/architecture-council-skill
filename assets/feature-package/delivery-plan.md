@@ -1,93 +1,57 @@
 ---
 architecture_revision: "{{REVISION}}"
 feature: "{{FEATURE_NAME}}"
-artifact: delivery_plan
+artifact: delivery_evolution_and_verification_plan
 status: "{{DRAFT|READY|IN_PROGRESS|COMPLETE}}"
 owner: "{{OWNER}}"
 artifact_language: "{{USER_LANGUAGE}}"
 updated_at: "{{YYYY-MM-DD}}"
 ---
 
-# План поставки
+# Поставка и переход
 
-## Стратегия поставки
-
-{{HOW_THE_FEATURE_IS_SLICED_AND_WHY}}
-
-## Обзор зависимостей
-
-```mermaid
-%% ac_id: delivery-dependencies
-%% ac_state: transition
-%% ac_purpose: зависимости инкрементов поставки
-%% ac_scope: {{SCOPE}}
-%% ac_legend: стрелка означает зависимость
-%% ac_revision: {{REVISION}}
-%% ac_normative: delivery-plan.md
-flowchart LR
-    INC001[INC-001] --> INC002[INC-002]
-    INC001 --> INC003[INC-003]
-```
+{{SLICING_STRATEGY_AND_WHY}}
 
 ## Инкремент INC-001: {{NAME}}
 
-### Наблюдаемый результат
+| Поле | Значение |
+|---|---|
+| Наблюдаемый результат | {{USER_OR_SYSTEM_VISIBLE_CAPABILITY}} |
+| Требования | {{REQ_IDS}} |
+| Scope / контракты / данные | {{BOUNDED_SCOPE}} |
+| Зависимости | {{INC_EXTERNAL_DECISION_OR_NONE}} |
+| Приёмка | {{TESTABLE_CRITERIA}} |
+| Проверка | {{VER_IDS_OR_LINKS}} |
+| Владелец / статус | {{OWNER}} / {{PLANNED|READY|IN_PROGRESS|DONE|BLOCKED}} |
 
-{{USER_OR_SYSTEM_VISIBLE_CAPABILITY}}
+## Переход, rollout и rollback
 
-### Требования
-
-- {{REQ_ID}}
-
-### Scope
-
-- Компоненты: {{COMPONENTS}}
-- Контракты: {{CONTRACTS}}
-- Изменения данных: {{CHANGES_OR_NONE}}
-- Безопасность/наблюдаемость: {{CHANGES_OR_NONE}}
-
-### Зависимости
-
-- {{INC_ID_EXTERNAL_DECISION_OR_NONE}}
-
-### Критерии приёмки
-
-1. {{TESTABLE_CRITERION}}
-2. {{TESTABLE_CRITERION}}
-
-### Проверка
-
-- {{VER_ID_OR_LINK}}
-
-### Rollout и rollback
-
-- Включение: {{METHOD}}
-- Сигнал успеха: {{METRIC}}
-- Rollback: {{METHOD}}
-
-### Владелец и статус
-
-- Владелец: {{OWNER}}
-- Статус: {{PLANNED|READY|IN_PROGRESS|DONE|BLOCKED}}
-
-## Межинкрементные зависимости
-
-| Откуда | Куда | Зависимость | Риск/mitigation |
+| Этап | Изменение и совместимость | Gate / сигнал успеха | Rollback или cleanup |
 |---|---|---|---|
-| {{INC_ID}} | {{INC_ID}} | {{DEPENDENCY}} | {{MITIGATION}} |
+| {{STAGE}} | {{CURRENT_TO_TARGET_CHANGE}} | {{CRITERION}} | {{ACTION_OR_POINT_OF_NO_RETURN}} |
 
-## Отложенная работа
+- Миграция/backfill/reconciliation: {{PLAN_OR_NOT_APPLICABLE_WITH_REASON}}
+- Временные механизмы и условие удаления: {{ITEMS_OR_NONE}}
+- Репетиция перехода: {{REQUIRED_EVIDENCE_OR_NOT_APPLICABLE}}
 
-| ID | Элемент | Причина | Владелец | Условие возврата |
+## Зависимости и отложенная работа
+
+| ID | Зависимость или элемент | Причина / mitigation | Владелец | Условие продолжения |
 |---|---|---|---|---|
-| {{ID}} | {{ITEM}} | {{REASON}} | {{OWNER}} | {{TRIGGER}} |
+| {{ID}} | {{ITEM}} | {{RATIONALE}} | {{OWNER}} | {{TRIGGER}} |
 
-## Готовность плана
+## Проверка требований
 
-Этот план описывает будущую реализацию и не является командой её начать.
+<!-- AC:VERIFICATIONS -->
+| Verification ID | Требование | Метод | Среда/этап | Данные/нагрузка | Критерий | Сигнал | Владелец |
+|---|---|---|---|---|---|---|---|
+| VER-001 | {{REQ_IDS}} | {{METHOD}} | {{ENVIRONMENT}} | {{DATA}} | {{CRITERION}} | {{SIG_ID_OR_NA}} | {{OWNER}} |
 
-- [ ] Каждый инкремент даёт наблюдаемое поведение или проверяемую capability.
-- [ ] Нет задач, разбитых только по техническим слоям без end-to-end результата.
-- [ ] Все `MUST` назначены инкрементам.
-- [ ] Зависимости, владельцы и acceptance criteria определены.
-- [ ] Каждый выпускаемый инкремент имеет проверку и rollback/disable path.
+<!-- AC:SIGNALS -->
+| Signal ID | Сигнал | Query/наблюдение | Ожидаемое | Alert/rollback | Владелец |
+|---|---|---|---|---|---|
+| SIG-001 | {{SIGNAL}} | {{QUERY_OR_METHOD}} | {{EXPECTED}} | {{THRESHOLD}} | {{OWNER}} |
+
+- Evidence gaps / gate: {{MATERIAL_GAPS_AND_PASS_REWORK_OR_BLOCKED}}
+
+План описывает будущую реализацию и не является командой её начать.

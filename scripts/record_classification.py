@@ -3,7 +3,7 @@
 import argparse
 import re
 from pathlib import Path
-from package_contract import classification_digest, frontmatter, mandatory_roles, selected_roles
+from package_contract import artifact_path, classification_digest, frontmatter, mandatory_roles, selected_roles
 
 
 def main():
@@ -11,7 +11,7 @@ def main():
     parser.add_argument("package", type=Path)
     args = parser.parse_args()
     package = args.package.resolve()
-    path = package / "feature-classification.md"
+    path = artifact_path(package, "feature-classification.md")
     text = path.read_text(encoding="utf-8")
     meta = frontmatter(text)
     level, context = meta.get("level"), meta.get("context")

@@ -3,6 +3,10 @@ architecture_revision: "{{REVISION}}"
 feature: "{{FEATURE_NAME}}"
 stage: intake
 readiness: "{{DRAFT|READY|READY_WITH_ASSUMPTIONS|BLOCKED}}"
+level: "{{L0|L1|L2|L3}}"
+context: "{{greenfield|brownfield}}"
+selected_roles: ["{{ROLE_ID}}"]
+classification_basis_sha256: "{{RECORD_AFTER_CLASSIFICATION_REVIEW}}"
 owner: "{{OWNER}}"
 artifact_language: "{{USER_LANGUAGE}}"
 updated_at: "{{YYYY-MM-DD}}"
@@ -10,97 +14,42 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Устав фичи
 
-## Проблема
+<!-- AC:CLASSIFICATION -->
+| Level / context | Основание и hard triggers | Выбранные роли | Дополнительные evidence | Gate |
+|---|---|---|---|---|
+| {{LEVEL}} / {{CONTEXT}} | {{RATIONALE_AND_TRIGGERS}} | {{ROLE_IDS}} | {{EVIDENCE_OR_NONE}} | {{PASS|REWORK|BLOCKED}} |
 
-{{WHO_HAS_WHAT_PROBLEM_AND_WHY_IT_MATTERS}}
+## Задача и результат
 
-## Доказательства проблемы
+- Проблема / источник: {{PROBLEM_AND_EVIDENCE}}
+- Пользователи: {{ACTORS_AND_NEEDS}}
+- Наблюдаемый бизнес-результат: {{OUTCOME}}
+- Метрика / цель / окно / владелец: {{SUCCESS_TARGET}}
 
-- {{USER_FEEDBACK_METRIC_INCIDENT_OR_SOURCE}}
+## Сценарий SCN-001: {{NAME}}
 
-## Пользователи и участники
-
-| Участник | Потребность | Текущая проблема |
-|---|---|---|
-| {{ACTOR}} | {{NEED}} | {{PAIN}} |
-
-## Бизнес-результат
-
-{{DESIRED_OBSERVABLE_RESULT}}
-
-## Метрики успеха
-
-| Метрика | Базовый уровень | Цель | Окно измерения | Владелец |
-|---|---:|---:|---|---|
-| {{METRIC}} | {{BASELINE_OR_UNKNOWN}} | {{TARGET}} | {{WINDOW}} | {{OWNER}} |
-
-## Основные сценарии
-
-### Сценарий SCN-001: {{NAME}}
-
-1. {{STEP}}
-2. {{STEP}}
-3. {{OBSERVABLE_OUTCOME}}
+{{TRIGGER_STEPS_AND_OBSERVABLE_OUTCOME}}
 
 ## Scope
 
-### Включено
+| Включено | Исключено и почему |
+|---|---|
+| {{IN_SCOPE}} | {{OUT_OF_SCOPE_AND_REASON}} |
 
-- {{ITEM}}
+## Входные ограничения
 
-### Исключено
-
-- {{ITEM_AND_REASON}}
-
-## Бизнес-правила и инварианты
-
-- {{RULE_OR_LINK_TO_REQUIREMENT}}
-
-## Ограничения и предположения о решении
-
-| Формулировка / источник | Тип: факт, ограничение, предпочтение, гипотеза | Защищаемая потребность и область действия | Подтверждено / открытая трактовка |
+| Формулировка / источник | Факт, ограничение, предпочтение или гипотеза | Защищаемая потребность / область | Статус или трактовки |
 |---|---|---|---|
-| {{STATEMENT_AND_SOURCE_LINK}} | {{TYPE}} | {{NEED_AND_SCOPE}} | {{CONFIRMATION_OR_CONDITIONAL_INTERPRETATIONS}} |
+| {{STATEMENT_AND_SOURCE}} | {{TYPE}} | {{NEED_AND_SCOPE}} | {{CONFIRMED_OR_OPEN}} |
 
-Уточняй только существенную неоднозначность. Предложенный механизм не становится
-обязательным без основания; подтверждённые требования сохраняются.
+Требования, ожидания качества, риски и допущения ведутся в
+[requirements.md](requirements.md), а не повторяются здесь.
 
+## Открытые вопросы и готовность
 
-## Известные ожидания качества
+| ID | Вопрос / влияние | Владелец / срок | Статус |
+|---|---|---|---|
+| Q-001 | {{QUESTION_AND_IMPACT}} | {{OWNER_AND_DUE}} | {{OPEN|ASSUMED|CLOSED|BLOCKING}} |
 
-| Категория | Ожидание | Статус |
-|---|---|---|
-| Performance | {{EXPECTATION_OR_UNKNOWN}} | {{stated/proposed/unknown}} |
-| Reliability | {{EXPECTATION_OR_UNKNOWN}} | {{stated/proposed/unknown}} |
-| Security | {{EXPECTATION_OR_UNKNOWN}} | {{stated/proposed/unknown}} |
-| Availability | {{EXPECTATION_OR_UNKNOWN}} | {{stated/proposed/unknown}} |
-
-## Предположения
-
-| ID | Формулировка | Основание | Последствия ошибки | Владелец | Проверить до |
-|---|---|---|---|---|---|
-| ASM-001 | {{STATEMENT}} | {{BASIS}} | {{IMPACT}} | {{OWNER}} | {{DATE_OR_STAGE}} |
-
-## Открытые вопросы
-
-| ID | Тип | Вопрос | Влияние | Владелец | Статус |
-|---|---|---|---|---|---|
-| Q-001 | {{discoverable/assumable/blocking}} | {{QUESTION}} | {{IMPACT}} | {{OWNER}} | {{STATUS}} |
-
-## Раунды уточнений
-
-| Раунд | Дата | Вопросы | Решения | Новые вопросы |
-|---|---|---|---|---|
-| 1 | {{DATE}} | {{LINK_OR_IDS}} | {{LINK_OR_IDS}} | {{IDS_OR_NONE}} |
-
-## Решение о готовности
-
-`READY` допустим только при определённых обязательных outcomes и success
-targets. Для обратимых non-blocking `TBD` используй `READY_WITH_ASSUMPTIONS` и
-укажи владельца, срок и влияние.
-
-- Status: `{{READY|READY_WITH_ASSUMPTIONS|BLOCKED}}`
-- Rationale: {{RATIONALE}}
-- Blocking scope: {{NONE_OR_SCOPE}}
-- Unresolved success targets: {{NONE_OR_IDS_WITH_OWNER_AND_DUE}}
-- Next stage: {{STAGE}}
+- Readiness / blocking scope: `{{READY|READY_WITH_ASSUMPTIONS|BLOCKED}}` / {{SCOPE_OR_NONE}}
+- Следующая стадия: {{STAGE}}

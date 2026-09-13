@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Создаёт Architecture Package Protocol v1.2.8 из ресурсов локального skill."""
+"""Создаёт sectioned Architecture Package Protocol v1.5.1."""
 
 from __future__ import annotations
 
@@ -11,35 +11,17 @@ import shutil
 import sys
 import shlex
 from collections import defaultdict
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from package_contract import mandatory_roles
-from diagnostics import BEGIN, END, event_errors, event_rows
+from package_contract import KNOWN_ROLES, mandatory_roles
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 ASSETS_ROOT = SKILL_ROOT / "assets"
 TEMPLATE_ROOT = ASSETS_ROOT / "feature-package"
 MANIFEST = ASSETS_ROOT / "template-manifest.yaml"
-SPECIALIST_ROLE_BY_STEM = {
-    "domain-architecture": "domain_architect",
-    "implementation-maintainability": "implementation_maintainability",
-    "security-privacy": "security_privacy",
-    "performance-reliability": "performance_reliability",
-    "data-consistency": "data_consistency",
-    "operations-observability": "operations_observability",
-    "verification": "verification_strategist",
-    "evolution-integration": "evolution_integration",
-}
-SENSITIVE_VALUE_PATTERNS = (
-    re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", re.IGNORECASE),
-    re.compile(r"\b(?:api[_-]?key|password|secret|access[_-]?token)\s*[:=]\s*\S+", re.IGNORECASE),
-    re.compile(r"\bauthorization\s*:\s*bearer\s+\S+", re.IGNORECASE),
-)
-
-
 def parse_manifest_lists(
     path: Path,
 ) -> tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
@@ -86,16 +68,6 @@ def parse_roles(value: Optional[str]) -> list[str]:
     return roles
 
 
-def validate_initial_summary(value: Optional[str]) -> None:
-    if value is None:
-        return
-    for pattern in SENSITIVE_VALUE_PATTERNS:
-        if pattern.search(value):
-            raise ValueError(
-                "initial-log-summary похож на секрет или credential; используй безопасное резюме"
-            )
-
-
 def required_paths(level: str, context: str, roles: list[str]) -> list[Path]:
     flat, nested = parse_manifest_lists(MANIFEST)
     base_level = "l2" if level == "L3" else level.casefold()
@@ -105,55 +77,27 @@ def required_paths(level: str, context: str, roles: list[str]) -> list[Path]:
     if level == "L3":
         values += flat.get("additional_for_l3", [])
 
-    known_roles = nested.get("conditional_by_role", {})
-    unknown = sorted(set(roles) - set(known_roles))
+    unknown = sorted(set(roles) - KNOWN_ROLES)
     if unknown:
         raise ValueError(
             "Неизвестные role IDs: "
             + ", ".join(unknown)
             + ". Допустимы: "
-            + ", ".join(sorted(known_roles))
+            + ", ".join(sorted(KNOWN_ROLES))
         )
-    for role in roles:
-        values += known_roles.get(role, [])
     return sorted({package_relative(value) for value in values})
-
-
-def verbose_paths() -> list[Path]:
-    flat, _ = parse_manifest_lists(MANIFEST)
-    return [package_relative(value) for value in flat.get("required_for_verbose", [])]
 
 
 def source_for(relative: Path) -> Path:
     direct = TEMPLATE_ROOT / relative
     if direct.is_file():
         return direct
-    if relative.parts[:2] == ("evidence", "specialist-reviews"):
-        return TEMPLATE_ROOT / "evidence" / "specialist-review.template.md"
     raise FileNotFoundError(f"Для обязательного артефакта нет шаблона: {relative}")
 
 
 def copy_file(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
-
-
-def copy_support_files(target: Path, level: str, context: str) -> None:
-    support = [
-        Path("adr/ADR-NNN-template.md"),
-        Path("evidence/benchmark.template.md"),
-        Path("evidence/conflict.template.md"),
-        Path("evidence/human-decision-request.template.md"),
-        Path("evidence/specialist-review.template.md"),
-        Path("evidence/specialist-reviews/README.md"),
-        Path("evidence/spike.template.md"),
-        Path("feature-classification.md"),
-    ]
-    support.append(
-        Path("current-system.md") if context == "brownfield" else Path("system-context.md")
-    )
-    for relative in support:
-        copy_file(TEMPLATE_ROOT / relative, target / relative)
 
 
 def substitute_known_values(
@@ -166,17 +110,11 @@ def substitute_known_values(
     context: str,
     revision: str,
     roles: list[str],
-    diagnostics_mode: str,
 ) -> None:
     context_link = (
         "[Current System Dossier](current-system.md)"
         if context == "brownfield"
         else "[System Context](system-context.md)"
-    )
-    threat_model = (
-        "[Threat Model](evidence/threat-model.md)"
-        if level == "L3"
-        else "N/A — для выбранного уровня не требуется; владелец: Council Orchestrator"
     )
     replacements = {
         "{{FEATURE_NAME}}": feature,
@@ -187,9 +125,6 @@ def substitute_known_values(
         "{{L0|L1|L2|L3}}": level,
         "{{greenfield|brownfield}}": context,
         "{{CURRENT_SYSTEM_OR_SYSTEM_CONTEXT_LINK}}": context_link,
-        "{{THREAT_MODEL_LINK_OR_NOT_APPLICABLE}}": threat_model,
-        "{{DIAGNOSTICS_MODE}}": diagnostics_mode,
-        "{{PROCESS_LOG_LINK_OR_DISABLED}}": "Подробная временная шкала: [журнал событий](evidence/process-log.md)." if diagnostics_mode == "VERBOSE" else "Подробная временная шкала не включена (NORMAL).",
     }
     role_list = ", ".join(f'"{role}"' for role in roles)
 
@@ -200,11 +135,7 @@ def substitute_known_values(
         for old, new in replacements.items():
             text = text.replace('"' + old + '"', json.dumps(new, ensure_ascii=False))
             text = text.replace(old, new)
-        if path.parent.name == "specialist-reviews" and path.name != "README.md":
-            role = SPECIALIST_ROLE_BY_STEM.get(path.stem)
-            if role:
-                text = text.replace("{{ROLE}}", role)
-        if path.name in {"process-ledger.md", "feature-classification.md"}:
+        if path.name in {"feature-charter.md", "council-review.md"}:
             text = re.sub(
                 r'^selected_roles:\s*\[.*?\]\s*$',
                 f"selected_roles: [{role_list}]",
@@ -212,68 +143,6 @@ def substitute_known_values(
                 flags=re.MULTILINE,
             )
         path.write_text(text, encoding="utf-8")
-
-
-def initialize_verbose_log(
-    target: Path,
-    *,
-    feature: str,
-    language: str,
-    revision: str,
-    initial_summary: Optional[str],
-) -> None:
-    evidence = target / "evidence"
-    evidence.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-    run_id = "AC-" + timestamp.replace("-", "").replace(":", "").replace("Z", "Z")
-    summary = initial_summary or (
-        "Инициализирован диагностический прогон Architecture Council."
-        if language == "ru"
-        else "Architecture Council verbose run initialized."
-    )
-    event = {
-        "sequence": 1,
-        "timestamp": timestamp,
-        "event": "run_started",
-        "status": "IN_PROGRESS",
-        "stage": "initialization",
-        "actor_id": "council-orchestrator",
-        "role": "council_orchestrator",
-        "input_revision": revision,
-        "artifacts": ["README.md"],
-        "source": "system",
-        "summary": summary,
-    }
-    errors = event_errors(event)
-    if errors:
-        raise ValueError("; ".join(errors))
-    markdown_summary = summary.replace("|", "\\|").replace("\r", " ").replace("\n", " ")
-    (evidence / "process-log.jsonl").write_text(
-        json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n",
-        encoding="utf-8",
-    )
-    markdown = f'''---
-feature: {json.dumps(feature, ensure_ascii=False)}
-artifact: process_log
-architecture_revision: {json.dumps(revision, ensure_ascii=False)}
-diagnostics_mode: "VERBOSE"
-run_id: "{run_id}"
-artifact_language: "{language}"
-updated_at: "{date.today().isoformat()}"
----
-
-# Временная шкала Architecture Council
-
-Журнал содержит только наблюдаемые события процесса. Он не является
-нормативной архитектурой и не должен содержать chain-of-thought, сырые prompts,
-секреты, исходный код или полные tool outputs.
-
-| # | Timestamp | Event | Stage | Actor/Role | Status | Artifacts | Summary |
-|---:|---|---|---|---|---|---|---|
-{BEGIN}
-{event_rows([event])}{END}
-'''
-    (evidence / "process-log.md").write_text(markdown, encoding="utf-8")
 
 
 def reserve_package(root: Path, feature: str) -> tuple[Path, int]:
@@ -314,24 +183,12 @@ def main() -> int:
     parser.add_argument("--slug", help="Необязательный технический ID; не используется в видимом имени пакета")
     parser.add_argument("--revision", default="architecture-v1")
     parser.add_argument("--roles", help="Role IDs через запятую")
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Включить диагностический process log для разработки или dry run",
-    )
-    parser.add_argument(
-        "--initial-log-summary",
-        help="Локализованное краткое описание первого события VERBOSE",
-    )
     args = parser.parse_args()
     if args.target is not None and args.package_root is not None:
         parser.error("target и --package-root нельзя использовать вместе")
 
     try:
         roles = parse_roles(args.roles)
-        validate_initial_summary(args.initial_log_summary)
-        if args.verbose and args.initial_log_summary is not None and not args.initial_log_summary.strip():
-            raise ValueError("initial-log-summary не может быть пустым")
         roles = sorted(set(roles) | mandatory_roles(args.level, args.context))
         paths = required_paths(args.level, args.context, roles)
     except (ValueError, FileNotFoundError) as error:
@@ -356,13 +213,9 @@ def main() -> int:
 
     target.mkdir(parents=True, exist_ok=True)
     try:
+        (target / "adr").mkdir(exist_ok=True)
         for relative in paths:
             copy_file(source_for(relative), target / relative)
-        copy_support_files(target, args.level, args.context)
-        if args.verbose:
-            for relative in verbose_paths():
-                if relative.name == "verbose-review.md":
-                    copy_file(source_for(relative), target / relative)
         substitute_known_values(
             target,
             feature=args.feature,
@@ -372,23 +225,14 @@ def main() -> int:
             context=args.context,
             revision=args.revision,
             roles=roles,
-            diagnostics_mode="VERBOSE" if args.verbose else "NORMAL",
         )
         if number is not None:
-            for name in ('README.md', 'decision-brief.md'):
+            for name in ('README.md',):
                 path = target / name
                 text = path.read_text()
                 text = text.replace('---\n', f'---\npackage_number: {number}\npackage_name: {json.dumps(target.name, ensure_ascii=False)}\n', 1)
                 text = text.replace(f'# {args.feature}\n', f'# {target.name}\n', 1)
                 path.write_text(text)
-        if args.verbose:
-            initialize_verbose_log(
-                target,
-                feature=args.feature,
-                language=args.language,
-                revision=args.revision,
-                initial_summary=args.initial_log_summary,
-            )
     except (OSError, ValueError) as error:
         print(f"[ERROR] Не удалось создать пакет: {error}", file=sys.stderr)
         return 2
@@ -398,15 +242,12 @@ def main() -> int:
     print(f"Architecture Package создан: {target}")
     print(f"Уровень/контекст: {args.level}/{args.context}; язык: {args.language}")
     print(f"Выбранные роли: {', '.join(roles) if roles else 'нет дополнительных ролей'}")
-    print("Следующий шаг: заполнить пакет по стадиям Protocol v1.2.8.")
-    if args.verbose:
-        print("Диагностика: VERBOSE; события добавляет только Council Orchestrator через log_event.py.")
+    print("Следующий шаг: заполнить секции пакета по Protocol v1.5.1.")
     print(
         "Проверка шаблона: "
         f"python3 {shlex.quote(str(validator))} {shlex.quote(str(target))} --level {args.level} "
         f"--context {args.context} --language {args.language}{role_arg} "
         "--template-mode"
-        + (" --verbose" if args.verbose else "")
     )
     return 0
 

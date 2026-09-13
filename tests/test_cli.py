@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from package_fixture import complete_package, run, set_meta, STAMP, SCRIPTS
+from package_fixture import complete_compact_package, complete_package, run, set_meta, STAMP, SCRIPTS
 
 
 class NumberedPackageCLI(unittest.TestCase):
@@ -25,13 +25,13 @@ class NumberedPackageCLI(unittest.TestCase):
                    '--context', 'greenfield', '--language', 'ru', '--feature', title, *extra)
 
     def test_numbered_name_and_quoted_validation_command(self):
-        result = self.create('Календарь «Работа»', '--verbose')
+        result = self.create('Календарь «Работа»')
         self.assertEqual(0, result.returncode, result.stderr)
         path = self.root / '001 — Календарь «Работа»'
         text = (path / 'README.md').read_text()
         self.assertIn('package_number: 1', text)
         self.assertIn('# 001 — Календарь «Работа»', text)
-        self.assertIn('# 001 — Календарь «Работа»', (path / 'decision-brief.md').read_text())
+        self.assertFalse((path / 'decision-brief.md').exists())
         command = shlex.split(result.stdout.split('Проверка шаблона: ', 1)[1])
         self.assertIn(str(path), command)
         check = subprocess.run([sys.executable, *command[1:]], capture_output=True, text=True)
@@ -65,6 +65,17 @@ class NumberedPackageCLI(unittest.TestCase):
                                 cwd=self.temp.name, capture_output=True, text=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertTrue((self.root / '001 — Импорт встреч' / 'README.md').is_file())
+
+    def test_initializer_copies_only_selected_profile(self):
+        self.assertEqual(0, self.create().returncode)
+        package = self.root / '001 — Синхронизация календаря'
+        names = {str(path.relative_to(package)) for path in package.rglob('*.md')}
+        self.assertNotIn('final-decision.md', names)
+        self.assertNotIn('evolution-plan.md', names)
+        self.assertNotIn('risks-and-assumptions.md', names)
+        self.assertNotIn('implementation-handoff.md', names)
+        self.assertFalse(any('.template.' in name or name.endswith('-template.md') for name in names))
+        self.assertLessEqual(len(names), 18)
 
 
 class PackageCLI(unittest.TestCase):
@@ -103,11 +114,143 @@ class PackageCLI(unittest.TestCase):
                     self.assertEqual(0, result.returncode, result.stdout + result.stderr)
                     self.assertIn("errors=0, warnings=0", result.stdout)
 
+    def test_sectioned_profiles_accept_real_sections(self):
+        for level in ("L1", "L2", "L3"):
+            for context in ("greenfield", "brownfield"):
+                with self.subTest(level=level, context=context):
+                    package = self.root / f"compact-{level}-{context}"
+                    complete_compact_package(package, level=level, context=context)
+                    result = self.validate(package=package, level=level, context=context)
+                    self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                    self.assertEqual(7, len(list(package.rglob("*.md"))))
+
+    def test_sectioned_readme_owns_human_review(self):
+        package = self.root / "compact-readme"
+        complete_compact_package(package)
+        self.assertFalse((package / "decision-brief.md").exists())
+        readme = package / "README.md"
+        readme.write_text(readme.read_text().replace("<!-- AC:HUMAN_REVIEW -->", ""))
+        self.assertRejected(self.validate(package=package), "README: отсутствует запись AC:HUMAN_REVIEW")
+
     def test_empty_traceability_cannot_drop_a_requirement(self):
         path = self.package / "requirements.md"
         path.write_text("\n".join(line for line in path.read_text().splitlines() if not line.startswith("| BR-001 |")) + "\n")
         self.stamp()
         self.assertRejected(self.validate(), "потеряно требование FR-001")
+
+    def implementation_tasks(self):
+        (self.package / 'implementation-handoff.md').write_text('''---
+architecture_revision: r1
+artifact_language: en
+human_review_status: AWAITING_HUMAN_REVIEW
+implementation_start: NOT_REQUESTED
+---
+# Implementation handoff
+The approved scope and actual user command determine whether implementation may start.
+''')
+        p = self.package / 'implementation-tasks.md'
+        p.write_text('''---
+architecture_revision: r1
+artifact_language: en
+code_revision: fixture-snapshot-1
+---
+# Implementation tasks
+<!-- AC:IMPLEMENTATION_TASKS -->
+| Task | Increment | Requirements | Dependencies | Status | Blocker | Acceptance | Verification | Evidence |
+|---|---|---|---|---|---|---|---|---|
+| [TASK-001 Export](#task-001) | [INC-001](delivery-plan.md) | [BR-001, FR-001](requirements.md) | — | READY | — | CSV roundtrip preserves books | [VER-001](verification-plan.md) | — |
+<a id="task-001"></a>
+## TASK-001 Export
+Implement the existing CSV contract; exclude import. Read the linked requirements and verification plan.
+''')
+        return p
+
+    def test_implementation_plan_is_opt_in_and_complete_plan_passes(self):
+        self.assertFalse((self.package / 'implementation-tasks.md').exists())
+        self.assertEqual(0, self.validate().returncode)
+        self.assertRejected(self.validate('--implementation-plan'), 'отсутствует implementation-tasks.md')
+        self.implementation_tasks()
+        result = self.validate('--implementation-plan')
+        self.assertEqual(0, result.returncode, result.stdout)
+
+    def test_task_contract_errors_are_detected_automatically(self):
+        p = self.implementation_tasks(); original = p.read_text()
+        cases = [
+            ('| — | READY |', '| TASK-999 | READY |', 'неизвестная зависимость'),
+            ('| — | READY |', '| TASK-001 | READY |', 'цикл зависимостей'),
+            ('| READY |', '| DONE |', 'DONE требует Evidence'),
+            ('| READY |', '| BLOCKED |', 'причина Blocker'),
+            ('[BR-001, FR-001]', '[BR-001]', 'потеряны требования'),
+            ('[VER-001]', '[VER-999]', 'неизвестная Verification'),
+            ('fixture-snapshot-1', '', 'code_revision'),
+            ('[TASK-001 Export](#task-001)', '[TASK-001 Export](requirements.md)', 'карточке задачи'),
+            ('| READY | — |', '| CANCELLED | replaced |', 'потеряны инкременты'),
+        ]
+        for before, after, error in cases:
+            with self.subTest(error=error):
+                p.write_text(original.replace(before, after))
+                self.assertRejected(self.validate(), error)
+
+    def test_task_dependency_becomes_ready_only_after_evidence_backed_done(self):
+        p = self.implementation_tasks()
+        text = p.read_text()
+        row = next(line for line in text.splitlines() if line.startswith('| [TASK-001'))
+        second = row.replace('TASK-001', 'TASK-002').replace('#task-001', '#task-002').replace('| — | READY |', '| [TASK-001](#task-001) | READY |')
+        text = text.replace(row, row + '\n' + second) + '\n<a id="task-002"></a>\n## TASK-002 Verify export\nRun the linked acceptance check.\n'
+        p.write_text(text)
+        self.assertRejected(self.validate(), 'зависимости ещё не DONE')
+        done = row.replace('| READY |', '| DONE |').rsplit('| — |', 1)[0] + '| [Result](evidence/task-result.md) |'
+        evidence = self.package / 'evidence/task-result.md'
+        evidence.write_text('---\narchitecture_revision: r1\nartifact_language: en\n---\n# Synthetic result\nThe fixture models recorded acceptance evidence.\n')
+        p.write_text(text.replace(row, done))
+        result = self.validate()
+        self.assertEqual(0, result.returncode, result.stdout)
+
+    def test_final_recommendation_matches_latest_arbiter_output(self):
+        set_meta(self.package / 'evidence/arbiter-review.md', council_recommendation='REJECTED')
+        self.assertRejected(self.validate(), 'рекомендация арбитра не совпадает')
+
+    def test_linked_requirement_and_invalid_references(self):
+        p = self.package / 'requirements.md'
+        original = p.read_text()
+        for cell, valid in [
+            ('[FR-001](#fr-001-local-csv-export)', True),
+            ('[FR-001](requirements.md#fr-001-local-csv-export)', True),
+            ('[FR-001](requirements.md#missing)', False),
+            ('[FR-999](requirements.md#fr-001-local-csv-export)', False),
+            ('FR-001, BR-001', False),
+        ]:
+            with self.subTest(cell=cell):
+                p.write_text(original.replace('| BR-001 | FR-001 |', f'| BR-001 | {cell} |'))
+                self.stamp()
+                result = self.validate()
+                self.assertEqual(0 if valid else 1, result.returncode, result.stdout)
+
+    def test_l1_diagrams_are_optional_but_existing_diagrams_are_checked(self):
+        for context in ('greenfield', 'brownfield'):
+            with self.subTest(context=context):
+                p = self.root / ('l1-' + context)
+                complete_package(p, level='L1', context=context)
+                for doc in p.rglob('*.md'):
+                    doc.write_text(re.sub(r'```mermaid\n.*?```', '', doc.read_text(), flags=re.S))
+                self.assertEqual(0, run('record_classification.py', p).returncode)
+                result = self.validate(package=p, level='L1', context=context)
+                self.assertEqual(0, result.returncode, result.stdout)
+                target = p / 'target-architecture.md'
+                target.write_text(target.read_text() + '\n```mermaid\n```\n')
+                self.assertRejected(self.validate(package=p, level='L1', context=context), 'пустая схема')
+
+    def test_historical_diagram_uses_document_revision_and_cannot_replace_current(self):
+        target = self.package / 'target-architecture.md'
+        historical = self.package / 'evidence/old-review.md'
+        historical.write_text(target.read_text().replace('target-architecture.md', '../target-architecture.md').replace('r1', 'r0'))
+        set_meta(historical, status='SUPERSEDED')
+        self.assertEqual(0, self.validate().returncode)
+        historical.write_text(historical.read_text().replace('ac_revision: r0', 'ac_revision: r2'))
+        self.assertRejected(self.validate(), 'revision схемы не совпадает')
+        historical.write_text(historical.read_text().replace('ac_revision: r2', 'ac_revision: r0'))
+        target.write_text(re.sub(r'```mermaid\n.*?```', '', target.read_text(), flags=re.S))
+        self.assertRejected(self.validate(), 'отсутствует обязательная схема')
 
     def test_traceability_references_must_exist(self):
         path = self.package / "requirements.md"
@@ -373,119 +516,33 @@ class PackageCLI(unittest.TestCase):
         path.write_text(metadata + ('The actual constraints and review results have been verified. ' * 30) + '\n' + machine * 100)
         self.assertRejected(self.validate(language='ru'), 'russian-probe.md выглядит')
 
+    def test_review_requires_current_validation_pass_but_candidate_does_not(self):
+        validation = self.package / 'evidence/package-validation.md'
+        set_meta(validation, status='FAIL')
+        self.assertRejected(self.validate(), 'package-validation должен иметь PASS')
+        candidate = self.validate('--validation-candidate')
+        self.assertEqual(0, candidate.returncode, candidate.stdout)
+        self.assertIn('Это ещё не handoff readiness', candidate.stdout)
 
-class LoggerCLI(unittest.TestCase):
-    def setUp(self):
-        self.temp=tempfile.TemporaryDirectory(prefix='council-log-test-',dir='/private/tmp');self.addCleanup(self.temp.cleanup)
-        self.package=Path(self.temp.name)/'package'
-        result=run('init_feature_package.py',self.package,'--level','L1','--context','greenfield','--language','ru','--feature','Журнал','--slug','log','--verbose')
-        self.assertEqual(0,result.returncode,result.stderr)
-        self.jsonl=self.package/'evidence/process-log.jsonl';self.md=self.package/'evidence/process-log.md'
+    def test_revision_impact_must_be_complete_and_intake_frozen(self):
+        impact = self.package / 'evidence/revision-impact.md'
+        impact.write_text('''---
+architecture_revision: r1
+artifact_language: en
+status: IN_PROGRESS
+base_revision: r0
+target_revision: r1
+intake_status: OPEN
+---
+# Revision impact
+The current revision changes the export contract and requires affected reviews.
+''')
+        result = self.validate()
+        self.assertRejected(result, 'revision-impact должен быть COMPLETE')
+        self.assertIn('intake_status должен быть FROZEN', result.stdout)
+        set_meta(impact, status='COMPLETE', intake_status='FROZEN')
+        self.assertEqual(0, self.validate().returncode)
 
-    def append(self,*extra):
-        return run('log_event.py',self.package,'--event','gate_evaluated','--status','PASS','--summary','Проверка завершена',*extra)
-
-    def test_artifact_links_resolve_and_jsonl_keeps_original_paths(self):
-        from urllib.parse import unquote
-        artifact = 'evidence/Замер (календарь).md'
-        (self.package / artifact).write_text('# Замер\n')
-        result = self.append('--artifact', artifact)
-        self.assertEqual(0, result.returncode, result.stderr)
-        destinations = re.findall(r'\]\(([^)]+)\)', self.md.read_text())
-        self.assertTrue(destinations)
-        targets = {(self.md.parent / unquote(raw)).resolve() for raw in destinations}
-        self.assertIn((self.package / artifact).resolve(), targets)
-        self.assertTrue(all(path.exists() for path in targets))
-        self.assertEqual([artifact], json.loads(self.jsonl.read_text().splitlines()[-1])['artifacts'])
-        before = self.md.read_bytes()
-        rebuilt = run('log_event.py', self.package, '--rebuild-markdown')
-        self.assertEqual(0, rebuilt.returncode, rebuilt.stderr)
-        self.assertEqual(before, self.md.read_bytes())
-
-    def test_invalid_events_are_rejected_before_either_file_changes(self):
-        before=(self.jsonl.read_bytes(),self.md.read_bytes())
-        for extra in [('--timestamp','bad-date'),('--timestamp','2026-09-06'),('--event','   '),('--status',' '),('--summary',' '),('--duration-ms','-1'),('--artifact','https://example.invalid/report?api_key=DUMMY_REVIEW_SECRET')]:
-            with self.subTest(extra=extra):
-                result=self.append(*extra);self.assertEqual(2,result.returncode,result.stdout)
-                self.assertEqual(before,(self.jsonl.read_bytes(),self.md.read_bytes()))
-                self.assertNotIn('DUMMY_REVIEW_SECRET',result.stderr)
-
-    def test_valid_event_is_projected_with_safe_markdown_cells(self):
-        result=self.append('--summary','Проверено | поле\nи <!-- AC:EVENTS:END -->')
-        self.assertEqual(0,result.returncode,result.stderr)
-        self.assertEqual(2,len(self.jsonl.read_text().splitlines()))
-        self.assertIn('&#124;',self.md.read_text())
-        result=run('validate_package.py',self.package,'--level','L1','--context','greenfield','--language','ru','--template-mode','--allow-missing-render','--verbose')
-        self.assertEqual(0,result.returncode,result.stdout)
-
-    def test_mismatched_projection_is_detected_and_rebuilt_without_append(self):
-        before=self.jsonl.read_bytes()
-        self.md.write_text(self.md.read_text().replace('| IN_PROGRESS |','| PASS |'))
-        result=run('validate_package.py',self.package,'--level','L1','--context','greenfield','--language','ru','--template-mode','--allow-missing-render','--verbose')
-        self.assertEqual(1,result.returncode);self.assertIn('не соответствует',result.stdout)
-        self.assertEqual(2,self.append().returncode)
-        result=run('log_event.py',self.package,'--rebuild-markdown');self.assertEqual(0,result.returncode,result.stderr)
-        self.assertEqual(before,self.jsonl.read_bytes())
-        self.assertIn('| IN_PROGRESS |',self.md.read_text())
-
-    def test_final_jsonl_line_without_lf_gets_a_separator(self):
-        self.jsonl.write_bytes(self.jsonl.read_bytes().rstrip(b"\n"))
-        result = self.append()
-        self.assertEqual(0, result.returncode, result.stderr)
-        events = [json.loads(line) for line in self.jsonl.read_text().splitlines()]
-        self.assertEqual([1, 2], [event["sequence"] for event in events])
-
-    def test_role_boundary_requires_identity_before_append(self):
-        before = (self.jsonl.read_bytes(), self.md.read_bytes())
-        result = self.append('--event', 'role_completed')
-        self.assertEqual(2, result.returncode)
-        self.assertIn('run_id', result.stderr)
-        self.assertEqual(before, (self.jsonl.read_bytes(), self.md.read_bytes()))
-
-    def test_late_role_boundary_keeps_registration_and_observed_time(self):
-        before = self.jsonl.read_bytes()
-        result = self.append('--event', 'role_completed', '--run-id', 'RUN-SEC-01',
-                             '--actor-id', '/root/security', '--role', 'security_privacy',
-                             '--input-revision', 'source-r2-hash', '--timestamp', '2026-09-06T08:10:00Z',
-                             '--occurred-at', '2026-09-06T08:00:00Z', '--timing-basis', 'Часы в отчёте reviewer')
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(self.jsonl.read_bytes().startswith(before))
-        event = json.loads(self.jsonl.read_text().splitlines()[-1])
-        self.assertEqual('2026-09-06T08:10:00Z', event['timestamp'])
-        self.assertEqual('2026-09-06T08:00:00Z', event['occurred_at'])
-        self.assertIn('RUN-SEC-01', self.md.read_text())
-        self.assertIn('source-r2-hash', self.md.read_text())
-        self.assertEqual(0, run('log_event.py', self.package, '--rebuild-markdown').returncode)
-
-    def test_invalid_observed_time_never_changes_logs(self):
-        before = (self.jsonl.read_bytes(), self.md.read_bytes())
-        for extra in [('--occurred-at', 'bad'),
-                      ('--occurred-at', '2026-09-06T08:00:00Z'),
-                      ('--occurred-at', '2026-09-06T10:00:00Z', '--timing-basis', 'clock')]:
-            result = self.append('--timestamp', '2026-09-06T09:00:00Z', *extra)
-            self.assertEqual(2, result.returncode)
-            self.assertEqual(before, (self.jsonl.read_bytes(), self.md.read_bytes()))
-
-    def test_normal_mode_refuses_logging(self):
-        set_meta(self.package/'README.md',diagnostics_mode='NORMAL')
-        before=(self.jsonl.read_bytes(),self.md.read_bytes())
-        self.assertEqual(2,self.append().returncode)
-        self.assertEqual(before,(self.jsonl.read_bytes(),self.md.read_bytes()))
-
-    def test_corrupted_sequence_refuses_additional_append(self):
-        self.jsonl.write_text(self.jsonl.read_text().replace('"sequence":1','"sequence":3'))
-        before=self.jsonl.read_bytes();self.assertEqual(2,self.append().returncode)
-        self.assertEqual(before,self.jsonl.read_bytes())
-
-    def test_missing_verbose_artifact_fails_validation(self):
-        (self.package/'evidence/verbose-review.md').unlink()
-        result=run('validate_package.py',self.package,'--level','L1','--context','greenfield','--language','ru','--template-mode','--allow-missing-render','--verbose')
-        self.assertEqual(1,result.returncode);self.assertIn('Отсутствует VERBOSE',result.stdout)
-
-    def test_nonempty_target_is_never_overwritten(self):
-        before=self.jsonl.read_bytes()
-        result=run('init_feature_package.py',self.package,'--level','L1','--context','greenfield','--language','ru','--feature','Другое','--slug','other')
-        self.assertEqual(2,result.returncode);self.assertEqual(before,self.jsonl.read_bytes())
 
 
 if __name__ == '__main__':

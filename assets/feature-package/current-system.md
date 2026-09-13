@@ -1,142 +1,52 @@
 ---
 architecture_revision: "{{REVISION}}"
 feature: "{{FEATURE_NAME}}"
-artifact: current_system_dossier
-status: "{{DRAFT|PASS|PARTIAL|BLOCKED}}"
-owner: system_discovery_analyst
-repository_revision: "{{COMMIT_OR_VERSION}}"
+artifact: current_system
+status: "{{DRAFT|PASS|REWORK|BLOCKED}}"
+owner: system_discovery
 repository_root: "{{ABSOLUTE_REPOSITORY_ROOT}}"
-code_evidence_status: "{{RECORDED|NOT_APPLICABLE}}"
+code_evidence_status: "{{AVAILABLE|NOT_APPLICABLE}}"
 code_evidence_reason: "{{REASON_IF_NOT_APPLICABLE}}"
 artifact_language: "{{USER_LANGUAGE}}"
-observed_at: "{{YYYY-MM-DD}}"
+updated_at: "{{YYYY-MM-DD}}"
 ---
 
-# Досье текущей системы
+# Текущая система
 
-## Границы исследования
-
-- Investigated: {{FEATURE_RELEVANT_SCOPE}}
-- Explicitly excluded: {{EXCLUDED_SCOPE_AND_REASON}}
-- Entry points: {{ENTRY_POINTS}}
-
-## Текущая архитектура в одном взгляде
+- Scope и источники: {{BOUNDARY_AND_PRIMARY_SOURCES}}
+- Текущий end-to-end flow: {{FLOW}}
+- Подтверждённые факты / противоречия: {{FACTS_AND_CONFLICTS}}
 
 ```mermaid
 %% ac_id: current-container
 %% ac_state: current
-%% ac_purpose: показать релевантные фиче текущие компоненты и связи
+%% ac_purpose: обзор текущей системы {{FEATURE_NAME}}
 %% ac_scope: {{SCOPE}}
-%% ac_legend: сплошная стрелка — синхронная или обязательная связь
+%% ac_legend: стрелка — наблюдаемая связь
 %% ac_revision: {{REVISION}}
 %% ac_normative: current-system.md
 flowchart LR
-    User[{{ACTOR}}]
-    UI[{{CURRENT_UI_OR_CLIENT}}]
-    API[{{CURRENT_API}}]
-    DB[({{CURRENT_SYSTEM_OF_RECORD}})]
-    External[{{EXTERNAL_SYSTEM}}]
-
-    User --> UI
-    UI --> API
-    API --> DB
-    API --> External
+    User[{{ACTOR}}] --> Client[{{CLIENT}}] --> Service[{{SERVICE}}] --> Store[({{STORE}})]
 ```
 
-## Текущий end-to-end flow
+## Поверхности изменения
 
-1. {{STEP_WITH_COMPONENT}}
-2. {{STEP_WITH_COMPONENT}}
-3. {{OBSERVABLE_OUTCOME}}
-
-## Компоненты и владение
-
-| Компонент | Ответственность | Собственные данные | Команда/владелец | Evidence |
+| Компонент/контракт | Владелец | Текущее поведение и данные | Ограничение/failure mode | Evidence |
 |---|---|---|---|---|
-| {{COMPONENT}} | {{RESPONSIBILITY}} | {{DATA}} | {{OWNER}} | {{SOURCE}} |
+| {{ITEM}} | {{OWNER}} | {{BEHAVIOR}} | {{LIMIT_OR_FAILURE}} | {{LINK}} |
 
-## Контракты и интеграции
+## Runtime, проверки и эксплуатация
 
-| Контракт | Производитель | Потребитель | Ограничения совместимости | Evidence |
-|---|---|---|---|---|
-| {{API_EVENT_JOB}} | {{PRODUCER}} | {{CONSUMER}} | {{CONSTRAINT}} | {{SOURCE}} |
-
-## Данные и консистентность
-
-| Данные | System of record | Жизненный цикл | Транзакционная граница | Evidence |
-|---|---|---|---|---|
-| {{DATA}} | {{OWNER}} | {{LIFECYCLE}} | {{BOUNDARY}} | {{SOURCE}} |
-
-## Runtime и deployment
-
-- Runtime topology: {{DESCRIPTION_OR_LINK}}
-- Scaling model: {{DESCRIPTION}}
-- Timeouts/retries: {{DESCRIPTION}}
-- Deployment mechanism: {{DESCRIPTION}}
-- Relevant configuration: {{SOURCES}}
-
-## Существующие паттерны и ADR
-
-| Паттерн/решение | Значимость | Статус | Evidence |
+| Область | Наблюдаемое состояние | Evidence / неизвестность | Follow-up и владелец |
 |---|---|---|---|
-| {{PATTERN}} | {{WHY_RELEVANT}} | {{ACTIVE_OR_STALE}} | {{SOURCE}} |
+| Deployment / config | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
+| Tests / contracts | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
+| Logs / metrics / recovery | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
 
-## Тесты и наблюдаемые контракты
-
-| Поведение | Evidence | Уверенность |
-|---|---|---|
-| {{BEHAVIOR}} | {{TEST_METRIC_OR_TRACE}} | {{high/medium/low}} |
-
-## Эксплуатация и известные failure modes
-
-| Failure mode | Текущая обработка | Сигнал/runbook | Evidence |
-|---|---|---|---|
-| {{FAILURE}} | {{HANDLING}} | {{SIGNAL}} | {{SOURCE}} |
-
-## Противоречия источников
-
-| ID | Утверждение | Источник A | Источник B | Требуемое разрешение |
-|---|---|---|---|---|
-| DISC-001 | {{CLAIM}} | {{SOURCE_AND_VALUE}} | {{SOURCE_AND_VALUE}} | {{ACTION}} |
-
-## Ожидаемый blast radius
-
-- {{COMPONENT_CONTRACT_DATA_TEAM}}
-
-## Неизвестные и адресные follow-up
-
-| ID | Неизвестное | Влияние | Следующее действие | Владелец |
-|---|---|---|---|---|
-| Q-001 | {{UNKNOWN}} | {{IMPACT}} | {{DISCOVERY_SPIKE_QUESTION}} | {{OWNER}} |
-
-## Индекс evidence
-
-| Claim ID | Тип | Утверждение | Источник | Уверенность |
-|---|---|---|---|---|
-| CLM-001 | {{fact/inference/unknown}} | {{CLAIM}} | {{FULL_REPO_RELATIVE_PATH_AND_LINES_AT_REVISION}} | {{LEVEL}} |
-
-Evidence без полного repo-relative пути и зафиксированной revision считается
-неоднозначным. Будущий контракт маркируется как proposed и не записывается как
-existing invariant.
-
-## Discovery gate
-
-- Current flow explained: {{yes/no}}
-- Blast radius bounded: {{yes/no}}
-- Constraints sourced: {{yes/no}}
-- Unknowns explicit: {{yes/no}}
-- Result: `{{PASS|PARTIAL|BLOCKED}}`
-
-## Проверяемые ссылки на код
+- Blast radius: {{COMPONENTS_CONTRACTS_DATA_TESTS_OPERATIONS}}
+- Discovery gate: `{{PASS|REWORK|BLOCKED}}`; {{RATIONALE}}
 
 <!-- AC:CODE_EVIDENCE -->
-
 | Claim ID | Repo-relative path | Revision | Start | End |
-|---|---|---|---|---|
-| CLM-001 | {{REPO_RELATIVE_PATH}} | {{FULL_COMMIT_SHA_OR_WORKTREE_SHA256}} | {{FIRST_LINE}} | {{LAST_LINE}} |
-
-Для committed-кода используй полный commit SHA. Для локальных изменений —
-`WORKTREE:<sha256 содержимого файла>`. Валидатор читает ровно этот snapshot
-через Git или проверяет текущий hash; номера строк включительны. Для исследования
-без code claims удали строку и явно укажи `code_evidence_status: NOT_APPLICABLE`
-с `code_evidence_reason`. Семантика утверждения всё равно требует review.
+|---|---|---|---:|---:|
+| {{CLAIM_ID}} | {{PATH}} | {{FULL_COMMIT_SHA_OR_WORKTREE_SHA256}} | {{START}} | {{END}} |

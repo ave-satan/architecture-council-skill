@@ -19,6 +19,14 @@ HUMAN_STATUSES = {"AWAITING_HUMAN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "REJ
 MATURITIES = {"DESIGN_CANDIDATE", "EVIDENCE_AUTHORIZED", "IMPLEMENTATION_READY", "NOT_READY"}
 README_MARKERS = ("summary", "overview", "reading", "documents", "adrs", "interpretation", "next", "implementation")
 REQ_PATTERN = r"(?:BR|FR|QA(?:-[A-Z]+)?|INV|CON|TR)-\d{3,}"
+COMPACT_ALIASES = {
+    "feature-classification.md": "feature-charter.md",
+    "verification-plan.md": "delivery-plan.md",
+    "process-ledger.md": "evidence/council-review.md",
+    "evidence/architecture-options.md": "evidence/council-review.md",
+    "evidence/package-validation.md": "evidence/council-review.md",
+    "human-review.md": "README.md",
+}
 
 
 def frontmatter(text: str) -> dict[str, str]:
@@ -40,8 +48,19 @@ def frontmatter(text: str) -> dict[str, str]:
     return result
 
 
+def compact_package(package: Path) -> bool:
+    path = package / "README.md"
+    return path.is_file() and frontmatter(path.read_text(encoding="utf-8")).get("package_format") == "sectioned-v1"
+
+
+def artifact_path(package: Path, name: str) -> Path:
+    if compact_package(package):
+        name = COMPACT_ALIASES.get(name, name)
+    return package / name
+
+
 def text_at(package: Path, name: str) -> str:
-    path = package / name
+    path = artifact_path(package, name)
     return path.read_text(encoding="utf-8") if path.is_file() else ""
 
 
@@ -149,6 +168,13 @@ def link_errors(source: Path, raw: str) -> list[str]:
 
 def check_links(package, report, template_mode, allow_missing_render):
     for path in package.rglob("*.md"):
+        relative = path.relative_to(package)
+        metadata = frontmatter(path.read_text(encoding="utf-8"))
+        if (relative.parts[0] in {"adr", "evidence"}
+                and metadata.get("status") == "SUPERSEDED"):
+            # Historical prose is immutable and may reference anchors replaced by a
+            # later revision. Its original package is retained as revision evidence.
+            continue
         for raw in LINK_RE.findall(without_code(path.read_text(encoding="utf-8"))):
             if template_mode and PLACEHOLDER_RE.search(raw):
                 continue
@@ -170,8 +196,6 @@ def check_readme(package, language, report, template_mode):
         report.error("README: artifact_language не совпадает с --language")
     if meta.get("implementation_start") != "NOT_REQUESTED":
         report.error("README: implementation_start должен быть NOT_REQUESTED")
-    if meta.get("diagnostics_mode") not in {"NORMAL", "VERBOSE"}:
-        report.error("README: diagnostics_mode должен быть NORMAL или VERBOSE")
 
 
 def is_na(value: str) -> bool:
@@ -206,6 +230,12 @@ def check_traceability(package, report, template_mode=False):
             report.error("Traceability: ожидается 7 колонок")
             continue
         business, req, scenario, arch, inc, ver, signal = row
+        linked_req = re.fullmatch(r'\[(' + REQ_PATTERN + r')\]\((<[^>]+>|[^)]+)\)', req)
+        if linked_req:
+            req = linked_req[1]
+            destination, _, _ = resolve_link(package / 'requirements.md', linked_req[2])
+            if destination != (package / 'requirements.md').resolve():
+                report.error(f'Traceability {req}: Requirement link должен вести в requirements.md')
         observed.add(req)
         if req not in definitions:
             report.error(f"Traceability: неизвестное требование {req}")
@@ -253,7 +283,7 @@ def output_path(package, value):
     raw = links[0] if len(links) == 1 else value.strip('`')
     if re.match(r"^[A-Za-z][\w+.-]*://", raw):
         return None
-    path, _, _ = resolve_link(package / "process-ledger.md", raw)
+    path, _, _ = resolve_link(artifact_path(package, "process-ledger.md"), raw)
     return path if path.is_relative_to(package.resolve()) and path.is_file() else None
 
 
@@ -308,6 +338,7 @@ def check_roles(package, roles, report, template_mode):
         except (ValueError, TypeError):
             report.error(f"Role Runs {run}: неверные Started/Completed")
     coverage = {row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:ROLE_COVERAGE") if row}
+    review_records = {row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:REVIEWS") if row}
     for role in sorted(roles):
         if role not in latest:
             report.gate(f"Для выбранной роли нет завершённого запуска: {role}")
@@ -322,7 +353,14 @@ def check_roles(package, roles, report, template_mode):
             meta = frontmatter(path.read_text())
             if meta.get("architecture_revision", meta.get("revision")) != revision:
                 report.error(f"Role Runs {run[0]}: output относится к другой revision")
-            if role in {"arbiter", "red_team", "alternative_architect"} or path.parent.name == "specialist-reviews":
+            if role == 'arbiter' and meta.get('council_recommendation') != readme.get('council_recommendation'):
+                report.error(f'Role Runs {run[0]}: рекомендация арбитра не совпадает с итогом пакета')
+            if compact_package(package):
+                record = review_records.get(run[0], [])
+                if (len(record) != 7 or record[1:4] != [role, run[3], run[4]]
+                        or output_path(package, record[6]) != path):
+                    report.error(f"Role Runs {run[0]}: секция review не совпадает с ledger")
+            elif role in {"arbiter", "red_team", "alternative_architect"} or path.parent.name == "specialist-reviews":
                 for key, value in (("run_id", run[0]), ("actor_id", run[3]), ("input_revision", run[4])):
                     if meta.get(key) != value:
                         report.error(f"Role Runs {run[0]}: {key} output не совпадает с ledger")
@@ -356,7 +394,7 @@ def check_solution_space_coverage(package, level, report, template_mode):
         report.gate("Coverage: нет завершённого Solution Space Challenger run")
     elif (meta.get("coverage_challenger_actor_id") != matches[0][3]
           or meta.get("coverage_input_revision") != matches[0][4]
-          or output_path(package, matches[0][5]) != (package / "evidence/architecture-options.md").resolve()):
+          or output_path(package, matches[0][5]) != artifact_path(package, "evidence/architecture-options.md").resolve()):
         report.error("Coverage: actor/input/output не совпадают с challenger run")
     families = table(text, "SSC:FAMILIES")
     if not families or any(len(row) != 6 or not all(useful(x) for x in row) for row in families):
@@ -377,6 +415,14 @@ def check_status_consistency(package, report, template_mode):
     for key, choices in (("council_recommendation", RECOMMENDATIONS), ("human_review_status", HUMAN_STATUSES), ("design_maturity", MATURITIES)):
         if readme.get(key) not in choices:
             report.error(f"README: неизвестное значение {key}")
+    if compact_package(package):
+        readme_text = text_at(package, "README.md")
+        legacy_decision = package / "decision-brief.md"
+        human_review_text = readme_text
+        if readme_text.count("<!-- AC:HUMAN_REVIEW -->") != 1 and legacy_decision.is_file():
+            human_review_text = legacy_decision.read_text(encoding="utf-8")
+        if human_review_text.count("<!-- AC:HUMAN_REVIEW -->") != 1 or not table(human_review_text, "AC:HUMAN_REVIEW"):
+            report.error("README: отсутствует запись AC:HUMAN_REVIEW")
     for path in sorted(package.glob("*.md")) + sorted((package / "adr").glob("*.md")):
         if ".template." in path.name or path.name.endswith("-template.md"):
             continue
@@ -389,16 +435,19 @@ def check_status_consistency(package, report, template_mode):
         if "revision" in meta and meta["revision"] != revision:
             report.error(f"{path.name}: конфликт revision и architecture_revision")
         for key in ("council_recommendation", "human_review_status", "design_maturity"):
-            required = path.parent == package and (path.name in {"README.md", "decision-brief.md", "final-decision.md"} or key == "human_review_status" and path.name == "implementation-handoff.md")
+            required = path.parent == package and (path.name == "README.md" or key == "human_review_status" and path.name == "implementation-handoff.md")
             if (required or key in meta) and meta.get(key) != readme.get(key):
                 report.error(f"{path.name}: не совпадает {key}")
         if path.name == "human-review.md" and meta.get("status") != readme.get("human_review_status"):
             report.error("human-review.md: не совпадает human review status")
-        if path.parent == package and path.name in {"README.md", "final-decision.md", "implementation-handoff.md"} and meta.get("implementation_start") != "NOT_REQUESTED":
+        requires_boundary = path.name in {"README.md", "final-decision.md", "implementation-handoff.md"} or (
+            path.name == "decision-brief.md" and "implementation_start" in meta
+        )
+        if path.parent == package and requires_boundary and meta.get("implementation_start") != "NOT_REQUESTED":
             report.error(f"{path.name}: implementation_start должен быть NOT_REQUESTED")
     for path in (package / "evidence").rglob("*.md"):
         meta = frontmatter(path.read_text())
-        if meta.get("status") == "SUPERSEDED" or path.name in {"process-log.md", "README.md"} or ".template." in path.name:
+        if meta.get("status") == "SUPERSEDED" or path.name == "README.md" or ".template." in path.name:
             continue
         if meta.get("architecture_revision") != revision:
             report.error(f"{path.relative_to(package)}: активный evidence относится к другой revision")
@@ -407,12 +456,43 @@ def check_status_consistency(package, report, template_mode):
                 report.error(f"{path.name}: не совпадает {field}")
 
 
+def check_current_validation(package, report, template_mode, review_phase=True,
+                             validation_candidate=False):
+    if template_mode or not review_phase:
+        return
+    readme = frontmatter(text_at(package, "README.md"))
+    revision = readme.get("architecture_revision", "")
+    validation = frontmatter(text_at(package, "evidence/package-validation.md"))
+    if validation.get("architecture_revision") != revision:
+        report.error("package-validation относится не к текущей revision")
+    status_key = "package_validation_status" if compact_package(package) else "status"
+    if not validation_candidate and validation.get(status_key) != "PASS":
+        report.error("package-validation должен иметь PASS для текущей revision")
+    if compact_package(package):
+        text = text_at(package, "evidence/package-validation.md")
+        if text.count("<!-- AC:PACKAGE_VALIDATION -->") != 1 or not table(text, "AC:PACKAGE_VALIDATION"):
+            report.error("Council Review: отсутствует результат AC:PACKAGE_VALIDATION")
+    impact_path = package / "evidence/revision-impact.md"
+    if not impact_path.is_file():
+        return
+    impact = frontmatter(impact_path.read_text())
+    if impact.get("target_revision") != revision:
+        report.error("revision-impact: target_revision не совпадает с README")
+    if impact.get("status") != "COMPLETE":
+        report.gate("revision-impact должен быть COMPLETE до review")
+    if impact.get("intake_status") != "FROZEN":
+        report.gate("revision-impact: intake_status должен быть FROZEN до specialist review")
+
+
 def classification_digest(package):
     digest = hashlib.sha256()
     for name in ("feature-charter.md", "requirements.md", "current-system.md", "system-context.md"):
         path = package / name
         if path.is_file():
-            digest.update(name.encode() + b"\0" + path.read_bytes() + b"\0")
+            raw = path.read_bytes()
+            if compact_package(package) and name == "feature-charter.md":
+                raw = re.sub(rb"^classification_basis_sha256:.*$", b"classification_basis_sha256:", raw, flags=re.M)
+            digest.update(name.encode() + b"\0" + raw + b"\0")
     return digest.hexdigest()
 
 
@@ -431,6 +511,10 @@ def check_classification(package, level, context, roles, report, template_mode):
     recorded = roles_value(meta.get("selected_roles", ""))
     if recorded != roles:
         report.error("Classification selected_roles не совпадают с ledger/CLI")
+    if compact_package(package):
+        text = text_at(package, "feature-classification.md")
+        if text.count("<!-- AC:CLASSIFICATION -->") != 1 or not table(text, "AC:CLASSIFICATION"):
+            report.error("Feature Charter: отсутствует секция AC:CLASSIFICATION")
 
 
 def mermaid_blocks(text):
@@ -453,14 +537,20 @@ def mermaid_blocks(text):
         yield start, "\n".join(body), False
 
 
-def check_diagrams(package, report, allow_missing_render=False, context="greenfield"):
+def check_diagrams(package, report, allow_missing_render=False, context="greenfield", level="L2"):
     revision = frontmatter(text_at(package, "README.md")).get("architecture_revision")
     sources = [(path, 0, path.read_text(), True) for path in package.glob("diagrams/**/*.mmd")]
     for path in package.rglob("*.md"):
         sources.extend((path, line, body, closed) for line, body, closed in mermaid_blocks(path.read_text()))
     found = set()
+    seen = set()
     for path, line, text, closed in sources:
         location = str(path.relative_to(package)) + (f":{line}" if line else "")
+        meta = frontmatter(path.read_text()) if line else {}
+        historical = (path.relative_to(package).parts[0] in {'adr', 'evidence'}
+                      and (meta.get('status') == 'SUPERSEDED'
+                           or path.parent.name == 'adr' and meta.get('status') == 'REJECTED'))
+        expected_revision = meta.get('architecture_revision') if historical else revision
         if not closed:
             report.error(f"{location}: незакрытый блок mermaid")
         fields = dict(re.findall(r"^\s*%%\s+ac_(\w+):\s*(.+)$", text, re.M))
@@ -481,11 +571,15 @@ def check_diagrams(package, report, allow_missing_render=False, context="greenfi
             report.error(f"{location}: нет metadata {', '.join(missing)}")
         if line and fields.get("id"):
             key = (str(path.relative_to(package)), fields["id"])
-            if key in found:
+            if key in seen:
                 report.error(f"{location}: повторный ac_id {fields['id']}")
-            found.add(key)
-        if revision and fields.get("revision") and not PLACEHOLDER_RE.search(revision) and fields["revision"] != revision:
-            report.error(f"{location}: revision схемы не совпадает с пакетом")
+            seen.add(key)
+            if not historical:
+                found.add(key)
+        if historical and not useful(expected_revision or ''):
+            report.error(f'{location}: историческая схема требует architecture_revision документа')
+        if expected_revision and fields.get("revision") and not PLACEHOLDER_RE.search(expected_revision) and fields["revision"] != expected_revision:
+            report.error(f"{location}: revision схемы не совпадает с {'историческим документом' if historical else 'пакетом'}")
         ref = fields.get("normative", "")
         if ref and not PLACEHOLDER_RE.search(ref):
             for error in link_errors(path, ref):
@@ -494,7 +588,7 @@ def check_diagrams(package, report, allow_missing_render=False, context="greenfi
                 ("target-architecture.md", "key-flow", "diagrams/target/key-flow-sequence.mmd")]
     if context == "brownfield":
         required.append(("current-system.md", "current-container", "diagrams/current/container-view.mmd"))
-    for document, identifier, legacy in required:
+    for document, identifier, legacy in required if level in {'L2', 'L3'} else []:
         if (document, identifier) not in found and not (package / legacy).is_file():
             report.error(f"{document}: отсутствует обязательная схема {identifier}")
 
