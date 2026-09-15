@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Создаёт sectioned Architecture Package Protocol v1.5.1."""
+"""Создаёт sectioned Architecture Package Protocol v1.5.2."""
 
 from __future__ import annotations
 
@@ -242,7 +242,7 @@ def main() -> int:
     print(f"Architecture Package создан: {target}")
     print(f"Уровень/контекст: {args.level}/{args.context}; язык: {args.language}")
     print(f"Выбранные роли: {', '.join(roles) if roles else 'нет дополнительных ролей'}")
-    print("Следующий шаг: заполнить секции пакета по Protocol v1.5.1.")
+    print("Следующий шаг: заполнить секции пакета по Protocol v1.5.2.")
     print(
         "Проверка шаблона: "
         f"python3 {shlex.quote(str(validator))} {shlex.quote(str(target))} --level {args.level} "

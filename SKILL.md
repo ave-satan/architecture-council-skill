@@ -83,21 +83,20 @@ Let the initializer allocate the number; do not build dated slugs or manually
 guess the next number. Use that same numbered name in human-facing links and
 summaries. `--slug` is optional technical metadata, not the visible package name.
 The default package root is `./architecture`; reuse the project's established
-root if different. Keep revisions inside the same package; a continuation does
-not allocate another number. Existing unnumbered packages stay usable; do not
-rename them without updating their references as a separate scoped change.
+root if different. Continue the same package in place; a continuation does not
+allocate another number. Existing unnumbered packages stay usable; do not rename
+them without updating their references as a separate scoped change.
 
 Do not overwrite a non-empty target. If a package already exists, inspect it and
 continue its current architecture revision instead of reinitializing it.
 
-Before changing an existing package after a material requirement/evidence change,
-run the recovery preflight in the continuation contract. Keep the last coherent
-revision at its public package path and build the next revision in a hidden sibling
-working copy under `.architecture-council-work/<package-name>/<revision>/`. Do not
-bulk-replace revision strings: historical ADR, evidence, log events, and ledger
-rows are immutable inputs. Promote the working copy only after its full review
-validation passes; an interruption must leave either the old coherent package or
-an explicitly incomplete working copy, never a mixed public package.
+Before changing an existing package after a material requirement or evidence
+change, run the continuation preflight in the package contract and update only
+the affected current documents. Use repository history for recovery when it is
+available. Never create full package copies, versioned document duplicates,
+`.architecture-council-work`, or archives inside the package. If a non-versioned
+workspace genuinely needs rollback protection, use one temporary sibling backup
+outside the package and remove it after validation.
 
 ## Enforce the design-only boundary
 
@@ -172,15 +171,12 @@ For L1 follow the explicit reduced profile in protocol section 3.2: no mandatory
 Solution Space Challenge, Preliminary Arbitration, or Red Team. Its Coverage
 status is `NOT_APPLICABLE_L1`; an independent final Arbiter remains required.
 
-For each completed role, immediately add one `AC:ROLE_RUNS` row with its stable
-`run_id`, actual actor, role, exact input revision/hash, output, gate result and
-real start/completion timestamps. Do not infer timestamps or collapse several
-independent runs into one row. On continuation, follow the revision procedure in
+For each completed role, add one `AC:ROLE_RUNS` row with its stable `run_id`,
+actual actor, role, exact input revision/hash, output, gate result and real
+start/completion timestamps. Do not infer timestamps or duplicate the same run
+in coverage or review tables. On continuation, keep only runs supporting the
+current revision, rerun affected roles, and follow
 [package-contract.md](references/package-contract.md#продолжение-прогона).
-For a revised working copy, no specialist other than discovery or intake may
-start until `evidence/revision-impact.md` has `intake_status: FROZEN` for the
-exact target revision after Charter, Requirements, Classification, selected
-roles, and open gates are current.
 
 Never let one actor combine:
 
@@ -234,8 +230,9 @@ review. Do not repeat their content in README or make them a mandatory reading
 route for the owner. Do not create `decision-brief.md` in new packages. When a
 sectioned package is revised, merge any current legacy brief into README and
 remove the duplicate after updating links; untouched legacy packages remain valid.
-Apply these rules on continuation too: refresh the current README, preserve
-revision-linked decisions/history, and explain only material changes in chat.
+Apply these rules on continuation too: refresh the current README and explain
+only material changes in chat. Git history preserves superseded prose; retain a
+superseded ADR only when the current decision explicitly depends on it.
 
 - Write each fact, rationale, risk and status once in its canonical document;
   elsewhere use a descriptive link. Prefer dense tables and bounded lists over
@@ -325,18 +322,17 @@ Keep the runner proportional: group existing commands where possible rather
 than building a general test framework for one short experiment.
 
 Keep README as the current decision, basic package navigation, and next gate.
-Keep risks and assumptions in requirements.md, and the
-current-to-target path, rollout and rollback in delivery-plan.md. After material input changes, update affected
-normative documents and classification together; explicitly supersede obsolete
-claims. Preserve useful evidence instead of restarting the whole package.
-Reuse immutable inputs by revision/hash, saving
-unrecoverable mutable inputs once. Do not duplicate frozen copies or repeatedly
-recount the full inventory. Validate changed artifacts during work and run the
-full applicable check before handoff; repeat only for new changes or concerns.
-For each separately justified evidence file, preserve revision/language metadata
-and link it from Council Review. Keep one active section per role; preserve a
-superseded section/file only when later decisions depend on it. A revision/hash
-reference replaces copied input text whenever that input is reproducible.
+Keep risks and assumptions in requirements.md, and the current-to-target path,
+rollout and rollback in delivery-plan.md. After material input changes, update
+affected normative documents and classification together and remove obsolete
+prose from the current package. Keep one current section per role in Council
+Review; repository history, not versioned files in `evidence/`, preserves older
+iterations. Separate evidence is allowed only for a large raw result, an
+unrecoverable external input, or an independently approved record that the
+current decision links directly. Never store package archives, backup copies,
+`revision-impact.md`, versioned Council Reviews, or unlinked scratch reviews in
+`evidence/`. Validate changed artifacts during work and run the full applicable
+check before handoff; repeat only for new changes or concerns.
 
 ## Finish the design run
 

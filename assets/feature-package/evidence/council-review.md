@@ -26,16 +26,6 @@ updated_at: "{{YYYY-MM-DD}}"
 |---|---|---|---|---|---|---|---|---|
 | RUN-001 | {{STAGE}} | {{ROLE_ID}} | {{ACTOR_ID}} | {{REVISION_OR_HASH}} | [Секция](#run-001) | {{STATUS}} | {{ISO_TIME}} | {{ISO_TIME}} |
 
-<!-- AC:ROLE_COVERAGE -->
-| Выбранная роль | Output | Findings | Ответ refinement | Re-review | Статус |
-|---|---|---|---|---|---|
-| {{ROLE_ID}} | [Секция](#run-001) | {{IDS_OR_NONE}} | {{LINK_OR_NA}} | {{LINK_OR_NA}} | {{COMPLETE|MISSING}} |
-
-<!-- AC:REVIEWS -->
-| Run ID | Role | Actor ID | Input revision/hash | Verdict | Findings / response | Section |
-|---|---|---|---|---|---|---|
-| RUN-001 | {{ROLE_ID}} | {{ACTOR_ID}} | {{REVISION_OR_HASH}} | {{PASS|REWORK|BLOCKED}} | {{CONCISE_FINDINGS_AND_RESPONSE}} | [RUN-001](#run-001) |
-
 <a id="run-001"></a>
 ### RUN-001 — {{ROLE}}
 

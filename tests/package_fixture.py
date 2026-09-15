@@ -251,27 +251,17 @@ Database --> Application
 """, code_evidence_status="NOT_APPLICABLE", code_evidence_reason="Synthetic context has no code claims")
     else:
         write("system-context.md", "# Context\nThe local application and selected file form the boundary.")
-    runs, coverage, reviews, sections = [], [], [], []
+    runs, sections = [], []
     for index, role in enumerate(roles, 1):
         run_id, actor = f"RUN-{index:03}", f"actor-{index}"
         link = f"[Review](council-review.md#run-{index:03})"
         runs.append(f"| {run_id} | 3 | {role} | {actor} | r1 | {link} | PASS | {STAMP} | {STAMP} |")
-        coverage.append(f"| {role} | {link} | None | N/A | N/A | COMPLETE |")
-        reviews.append(f"| {run_id} | {role} | {actor} | r1 | PASS | No blocking finding | {link} |")
         sections.append(f'<a id="run-{index:03}"></a>\n### {run_id}\nNo blocking finding for the local export contract.')
     challenger = next((i for i, role in enumerate(roles, 1) if role == "solution_space_challenger"), None)
     review_body = """# Council review
 <!-- AC:ROLE_RUNS -->
 | Run | Stage | Role | Actor | Input | Output | Gate | Start | End |
 |---|---|---|---|---|---|---|---|---|
-%s
-<!-- AC:ROLE_COVERAGE -->
-| Role | Output | Findings | Response | Re-review | Status |
-|---|---|---|---|---|---|
-%s
-<!-- AC:REVIEWS -->
-| Run | Role | Actor | Input | Verdict | Findings | Section |
-|---|---|---|---|---|---|---|
 %s
 %s
 <!-- SSC:MAP -->
@@ -297,7 +287,7 @@ Coverage is sufficient for the selected level.
 | Snapshot | Errors | Gates | Warnings | Status |
 |---|---|---|---|---|
 | r1 | 0 | 0 | None | PASS |
-""" % ("\n".join(runs), "\n".join(coverage), "\n".join(reviews), "\n".join(sections))
+""" % ("\n".join(runs), "\n".join(sections))
     extra = {"selected_roles": roles, "council_recommendation": "ACCEPTED",
              "solution_space_coverage": "PASS" if challenger else "NOT_APPLICABLE_L1",
              "missed_solution_family_status": "NONE" if challenger else "NOT_APPLICABLE_L1",

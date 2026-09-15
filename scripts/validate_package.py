@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Структурная проверка Architecture Package Protocol v1.5.1 без зависимостей."""
+"""Структурная проверка Architecture Package Protocol v1.5.2 без зависимостей."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from implementation_plan import check_implementation_plan
 from package_contract import (frontmatter, selected_roles, check_links, check_readme,
     check_status_consistency, check_traceability, check_roles, check_solution_space_coverage,
     check_diagrams, check_evidence_locations, check_classification, check_current_validation,
-    compact_package, mandatory_roles)
+    check_evidence_hygiene, compact_package, mandatory_roles)
 
 
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]+\}\}")
@@ -213,6 +213,7 @@ def main() -> int:
     check_diagrams(package, report, args.allow_missing_render, args.context, args.level)
     if not args.template_mode:
         check_evidence_locations(package, args.context, report)
+    check_evidence_hygiene(package, report, args.template_mode)
     if args.phase == "draft" or args.template_mode:
         print("Проверен только черновик/шаблон; это не PASS готовности к handoff.")
     if args.validation_candidate:

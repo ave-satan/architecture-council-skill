@@ -167,13 +167,16 @@ def link_errors(source: Path, raw: str) -> list[str]:
 
 
 def check_links(package, report, template_mode, allow_missing_render):
+    compact = compact_package(package)
     for path in package.rglob("*.md"):
         relative = path.relative_to(package)
         metadata = frontmatter(path.read_text(encoding="utf-8"))
-        if (relative.parts[0] in {"adr", "evidence"}
-                and metadata.get("status") == "SUPERSEDED"):
-            # Historical prose is immutable and may reference anchors replaced by a
-            # later revision. Its original package is retained as revision evidence.
+        historical = (relative.parts[0] == "adr"
+                      and metadata.get("status") in {"SUPERSEDED", "REJECTED"})
+        historical = historical or (not compact and relative.parts[0] == "evidence"
+                                    and metadata.get("status") == "SUPERSEDED")
+        if historical:
+            # Historical ADR prose may reference anchors replaced later.
             continue
         for raw in LINK_RE.findall(without_code(path.read_text(encoding="utf-8"))):
             if template_mode and PLACEHOLDER_RE.search(raw):
@@ -337,8 +340,9 @@ def check_roles(package, roles, report, template_mode):
                 raise ValueError()
         except (ValueError, TypeError):
             report.error(f"Role Runs {run}: неверные Started/Completed")
-    coverage = {row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:ROLE_COVERAGE") if row}
-    review_records = {row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:REVIEWS") if row}
+    compact = compact_package(package)
+    coverage = ({row[0]: row for row in table(text_at(package, "process-ledger.md"), "AC:ROLE_COVERAGE") if row}
+                if not compact else {})
     for role in sorted(roles):
         if role not in latest:
             report.gate(f"Для выбранной роли нет завершённого запуска: {role}")
@@ -355,18 +359,15 @@ def check_roles(package, roles, report, template_mode):
                 report.error(f"Role Runs {run[0]}: output относится к другой revision")
             if role == 'arbiter' and meta.get('council_recommendation') != readme.get('council_recommendation'):
                 report.error(f'Role Runs {run[0]}: рекомендация арбитра не совпадает с итогом пакета')
-            if compact_package(package):
-                record = review_records.get(run[0], [])
-                if (len(record) != 7 or record[1:4] != [role, run[3], run[4]]
-                        or output_path(package, record[6]) != path):
-                    report.error(f"Role Runs {run[0]}: секция review не совпадает с ledger")
-            elif role in {"arbiter", "red_team", "alternative_architect"} or path.parent.name == "specialist-reviews":
+            if not compact and (role in {"arbiter", "red_team", "alternative_architect"}
+                                or path.parent.name == "specialist-reviews"):
                 for key, value in (("run_id", run[0]), ("actor_id", run[3]), ("input_revision", run[4])):
                     if meta.get(key) != value:
                         report.error(f"Role Runs {run[0]}: {key} output не совпадает с ledger")
-        covered = coverage.get(role, [])
-        if len(covered) != 6 or covered[-1] != "COMPLETE" or output_path(package, covered[1]) != path or path is None:
-            report.error(f"Role Coverage {role}: нужен COMPLETE с тем же output")
+        if not compact:
+            covered = coverage.get(role, [])
+            if len(covered) != 6 or covered[-1] != "COMPLETE" or output_path(package, covered[1]) != path or path is None:
+                report.error(f"Role Coverage {role}: нужен COMPLETE с тем же output")
     for actor, actor_roles in actors.items():
         conflict = (("arbiter" in actor_roles or "red_team" in actor_roles) and len(actor_roles) > 1
                     or {"solution_architect", "alternative_architect"} <= actor_roles
@@ -447,7 +448,8 @@ def check_status_consistency(package, report, template_mode):
             report.error(f"{path.name}: implementation_start должен быть NOT_REQUESTED")
     for path in (package / "evidence").rglob("*.md"):
         meta = frontmatter(path.read_text())
-        if meta.get("status") == "SUPERSEDED" or path.name == "README.md" or ".template." in path.name:
+        if ((not compact_package(package) and meta.get("status") == "SUPERSEDED")
+                or path.name == "README.md" or ".template." in path.name):
             continue
         if meta.get("architecture_revision") != revision:
             report.error(f"{path.relative_to(package)}: активный evidence относится к другой revision")
@@ -470,18 +472,43 @@ def check_current_validation(package, report, template_mode, review_phase=True,
         report.error("package-validation должен иметь PASS для текущей revision")
     if compact_package(package):
         text = text_at(package, "evidence/package-validation.md")
-        if text.count("<!-- AC:PACKAGE_VALIDATION -->") != 1 or not table(text, "AC:PACKAGE_VALIDATION"):
-            report.error("Council Review: отсутствует результат AC:PACKAGE_VALIDATION")
-    impact_path = package / "evidence/revision-impact.md"
-    if not impact_path.is_file():
+        rows = table(text, "AC:PACKAGE_VALIDATION")
+        if text.count("<!-- AC:PACKAGE_VALIDATION -->") != 1 or len(rows) != 1:
+            report.error("Council Review: нужна ровно одна актуальная строка AC:PACKAGE_VALIDATION")
+
+
+def check_evidence_hygiene(package, report, template_mode=False):
+    """Keep current sectioned evidence small, linked and non-archival."""
+    if template_mode or not compact_package(package):
         return
-    impact = frontmatter(impact_path.read_text())
-    if impact.get("target_revision") != revision:
-        report.error("revision-impact: target_revision не совпадает с README")
-    if impact.get("status") != "COMPLETE":
-        report.gate("revision-impact должен быть COMPLETE до review")
-    if impact.get("intake_status") != "FROZEN":
-        report.gate("revision-impact: intake_status должен быть FROZEN до specialist review")
+    evidence = package / "evidence"
+    council = evidence / "council-review.md"
+    linked = set()
+    if council.is_file():
+        for raw in LINK_RE.findall(without_code(council.read_text(encoding="utf-8"))):
+            path, _, _ = resolve_link(council, raw)
+            linked.add(path)
+    archive_suffixes = (".tar", ".tar.gz", ".tgz", ".zip", ".7z")
+    for path in package.rglob("*"):
+        if path.is_file() and path.name.casefold().endswith(archive_suffixes):
+            report.error(f"{path.relative_to(package)}: архивы пакета запрещены")
+    if not evidence.is_dir():
+        return
+    for path in evidence.rglob("*.md"):
+        if path == council or ".template." in path.name:
+            continue
+        name = path.name.casefold()
+        if name == "revision-impact.md":
+            report.error("evidence/revision-impact.md запрещён; обновляй текущие документы")
+            continue
+        if name.startswith("council-review") or re.match(r"(?:review|.*-review)(?:[-_].*)?\.md$", name):
+            report.error(f"{path.relative_to(package)}: versioned или отдельные review-файлы запрещены")
+            continue
+        if frontmatter(path.read_text(encoding="utf-8")).get("status") == "SUPERSEDED":
+            report.error(f"{path.relative_to(package)}: superseded evidence должен оставаться в Git")
+            continue
+        if path.resolve() not in linked:
+            report.error(f"{path.relative_to(package)}: дополнительный evidence не связан из Council Review")
 
 
 def classification_digest(package):
@@ -539,6 +566,7 @@ def mermaid_blocks(text):
 
 def check_diagrams(package, report, allow_missing_render=False, context="greenfield", level="L2"):
     revision = frontmatter(text_at(package, "README.md")).get("architecture_revision")
+    compact = compact_package(package)
     sources = [(path, 0, path.read_text(), True) for path in package.glob("diagrams/**/*.mmd")]
     for path in package.rglob("*.md"):
         sources.extend((path, line, body, closed) for line, body, closed in mermaid_blocks(path.read_text()))
@@ -547,9 +575,10 @@ def check_diagrams(package, report, allow_missing_render=False, context="greenfi
     for path, line, text, closed in sources:
         location = str(path.relative_to(package)) + (f":{line}" if line else "")
         meta = frontmatter(path.read_text()) if line else {}
-        historical = (path.relative_to(package).parts[0] in {'adr', 'evidence'}
-                      and (meta.get('status') == 'SUPERSEDED'
-                           or path.parent.name == 'adr' and meta.get('status') == 'REJECTED'))
+        historical = (path.relative_to(package).parts[0] == 'adr'
+                      and meta.get('status') in {'SUPERSEDED', 'REJECTED'})
+        historical = historical or (not compact and path.relative_to(package).parts[0] == 'evidence'
+                                    and meta.get('status') == 'SUPERSEDED')
         expected_revision = meta.get('architecture_revision') if historical else revision
         if not closed:
             report.error(f"{location}: незакрытый блок mermaid")

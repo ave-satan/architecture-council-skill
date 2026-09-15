@@ -524,24 +524,44 @@ Implement the existing CSV contract; exclude import. Read the linked requirement
         self.assertEqual(0, candidate.returncode, candidate.stdout)
         self.assertIn('Это ещё не handoff readiness', candidate.stdout)
 
-    def test_revision_impact_must_be_complete_and_intake_frozen(self):
-        impact = self.package / 'evidence/revision-impact.md'
+    def test_sectioned_evidence_rejects_process_archives_and_unlinked_files(self):
+        package = self.root / 'compact-evidence'
+        complete_compact_package(package)
+        impact = package / 'evidence/revision-impact.md'
         impact.write_text('''---
 architecture_revision: r1
 artifact_language: en
-status: IN_PROGRESS
-base_revision: r0
-target_revision: r1
-intake_status: OPEN
 ---
 # Revision impact
 The current revision changes the export contract and requires affected reviews.
 ''')
-        result = self.validate()
-        self.assertRejected(result, 'revision-impact должен быть COMPLETE')
-        self.assertIn('intake_status должен быть FROZEN', result.stdout)
-        set_meta(impact, status='COMPLETE', intake_status='FROZEN')
-        self.assertEqual(0, self.validate().returncode)
+        self.assertRejected(self.validate(package=package), 'revision-impact.md запрещён')
+        impact.unlink()
+        archive = package / 'evidence/architecture-v1.tar.gz'
+        archive.write_bytes(b'archive')
+        self.assertRejected(self.validate(package=package), 'архивы пакета запрещены')
+        archive.unlink()
+        prompt = package / 'evidence/provider-prompt.md'
+        prompt.write_text('''---
+architecture_revision: r1
+artifact_language: en
+---
+# Provider prompt
+This is the exact unrecoverable provider input required by the current decision.
+''')
+        self.assertRejected(self.validate(package=package), 'не связан из Council Review')
+        council = package / 'evidence/council-review.md'
+        council.write_text(council.read_text() + '\n[Provider input](provider-prompt.md)\n')
+        self.assertEqual(0, self.validate(package=package).returncode)
+
+    def test_sectioned_validation_keeps_only_current_row(self):
+        package = self.root / 'compact-validation-history'
+        complete_compact_package(package)
+        council = package / 'evidence/council-review.md'
+        council.write_text(council.read_text().replace(
+            '| r1 | 0 | 0 | None | PASS |',
+            '| r0 | 0 | 0 | None | PASS |\n| r1 | 0 | 0 | None | PASS |'))
+        self.assertRejected(self.validate(package=package), 'ровно одна актуальная строка')
 
 
 
