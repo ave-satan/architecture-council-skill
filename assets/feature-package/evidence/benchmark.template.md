@@ -15,20 +15,20 @@ executed_at: "{{YYYY-MM-DD}}"
 
 ## Требование/решение
 
-- Requirements: {{QA_IDS}}
-- Informs: {{OPTION_ADR_OR_CONFLICT}}
+- Требования: {{QA_IDS}}
+- Уточняемое решение: {{OPTION_ADR_OR_CONFLICT}}
 
 ## Среда
 
-- Hardware/runtime: {{DESCRIPTION}}
-- Versions/configuration: {{DESCRIPTION}}
-- Differences from production: {{DESCRIPTION}}
+- Оборудование/среда исполнения: {{DESCRIPTION}}
+- Версии/конфигурация: {{DESCRIPTION}}
+- Отличия от рабочей среды: {{DESCRIPTION}}
 
 ## Нагрузка и данные
 
-- Traffic model: {{RPS_CONCURRENCY_DURATION}}
-- Dataset: {{SIZE_SHAPE_DISTRIBUTION}}
-- Warm-up/repetitions: {{DESCRIPTION}}
+- Модель нагрузки: {{RPS_CONCURRENCY_DURATION}}
+- Набор данных: {{SIZE_SHAPE_DISTRIBUTION}}
+- Прогрев/повторы: {{DESCRIPTION}}
 
 ## Метрики и критерии прохождения
 
@@ -44,9 +44,9 @@ executed_at: "{{YYYY-MM-DD}}"
 
 ## Артефакты
 
-- Commands/configuration: {{LINK}}
-- Raw results: {{LINK}}
-- Charts/logs: {{LINK}}
+- Команды/конфигурация: {{LINK}}
+- Сырые результаты: {{LINK}}
+- Графики/логи: {{LINK}}
 
 ## Ограничения
 

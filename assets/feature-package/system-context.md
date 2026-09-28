@@ -24,18 +24,18 @@ observed_at: "{{YYYY-MM-DD}}"
 
 ## Внешние системы и контракты
 
-| Система | Назначение | Входящий/исходящий контракт | Владелец | Evidence |
+| Система | Назначение | Входящий/исходящий контракт | Владелец | Основания |
 |---|---|---|---|---|
 | {{SYSTEM}} | {{PURPOSE}} | {{CONTRACT}} | {{OWNER}} | {{SOURCE}} |
 
 ## Среда и платформы
 
 - Клиенты и устройства: {{PLATFORMS}}
-- Runtime/deployment: {{ENVIRONMENT}}
-- Сети и connectivity: {{NETWORK_CONSTRAINTS}}
+- Исполнение/развёртывание: {{ENVIRONMENT}}
+- Сети и связность: {{NETWORK_CONSTRAINTS}}
 - Доступные хранилища и инфраструктура: {{CAPABILITIES}}
 
-## Trust boundaries и данные
+## Границы доверия и данные
 
 | Граница | Что пересекает | Кто контролирует | Риск/ограничение |
 |---|---|---|---|
@@ -45,7 +45,7 @@ observed_at: "{{YYYY-MM-DD}}"
 
 - {{CONSTRAINT_AND_SOURCE}}
 
-## Предполагаемый blast radius
+## Предполагаемая область воздействия
 
 - {{COMPONENT_SYSTEM_TEAM_OR_USER_GROUP}}
 
@@ -55,10 +55,10 @@ observed_at: "{{YYYY-MM-DD}}"
 |---|---|---|---|---|---|
 | Q-001 | {{discoverable/assumable/blocking}} | {{UNKNOWN}} | {{IMPACT}} | {{ACTION}} | {{OWNER}} |
 
-## Context gate
+## Итог определения контекста
 
 - Внешние границы определены: {{yes/no}}
 - Основные контракты и владельцы известны: {{yes/no}}
-- Trust boundaries обозначены: {{yes/no}}
+- Границы доверия обозначены: {{YES_OR_NO}}
 - Неизвестные классифицированы: {{yes/no}}
-- Result: `{{PASS|PARTIAL|BLOCKED}}`
+- Результат: `{{PASS|PARTIAL|BLOCKED}}`

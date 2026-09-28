@@ -15,7 +15,7 @@ updated_at: "{{YYYY-MM-DD}}"
 # Устав фичи
 
 <!-- AC:CLASSIFICATION -->
-| Level / context | Основание и hard triggers | Выбранные роли | Дополнительные evidence | Gate |
+| Уровень / контекст | Основание и жёсткие триггеры | Выбранные роли | Дополнительные основания | Итог |
 |---|---|---|---|---|
 | {{LEVEL}} / {{CONTEXT}} | {{RATIONALE_AND_TRIGGERS}} | {{ROLE_IDS}} | {{EVIDENCE_OR_NONE}} | {{PASS|REWORK|BLOCKED}} |
 
@@ -30,7 +30,7 @@ updated_at: "{{YYYY-MM-DD}}"
 
 {{TRIGGER_STEPS_AND_OBSERVABLE_OUTCOME}}
 
-## Scope
+## Границы фичи
 
 | Включено | Исключено и почему |
 |---|---|
@@ -51,5 +51,5 @@ updated_at: "{{YYYY-MM-DD}}"
 |---|---|---|---|
 | Q-001 | {{QUESTION_AND_IMPACT}} | {{OWNER_AND_DUE}} | {{OPEN|ASSUMED|CLOSED|BLOCKING}} |
 
-- Readiness / blocking scope: `{{READY|READY_WITH_ASSUMPTIONS|BLOCKED}}` / {{SCOPE_OR_NONE}}
+- Готовность / заблокированная работа: `{{READY|READY_WITH_ASSUMPTIONS|BLOCKED}}` / {{SCOPE_OR_NONE}}
 - Следующая стадия: {{STAGE}}

@@ -16,13 +16,16 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Council Review
 
-Этот файл объединяет независимые outputs, gates и структурную проверку. Разные
+Этот файл объединяет независимые заключения, результаты этапов и структурную проверку. Разные
 секции сохраняют своих авторов и входы; общий файл не означает общего автора.
+
+Для каждого запуска используй отдельную непустую секцию с его Run ID в заголовке;
+табличная ссылка ведёт именно к этой секции. Автора и входы повторять в ней не нужно.
 
 ## Запуски ролей
 
 <!-- AC:ROLE_RUNS -->
-| Run ID | Stage | Role | Actor ID | Input revision/hash | Output | Gate result | Started | Completed |
+| Run ID | Этап | Роль | Actor ID | Входная ревизия/hash | Вывод | Результат этапа | Начало | Завершение |
 |---|---|---|---|---|---|---|---|---|
 | RUN-001 | {{STAGE}} | {{ROLE_ID}} | {{ACTOR_ID}} | {{REVISION_OR_HASH}} | [Секция](#run-001) | {{STATUS}} | {{ISO_TIME}} | {{ISO_TIME}} |
 
@@ -38,43 +41,47 @@ updated_at: "{{YYYY-MM-DD}}"
 | {{AXIS_OR_NA_L1}} | {{RATIONALE}} | {{MECHANISMS}} | {{REQ_IDS}} |
 
 <!-- SSC:FAMILIES -->
-| Family ID | Семейство/механизм | Источник | Требования | Неизвестные | Статус |
+| ID семейства | Семейство/механизм | Источник | Требования | Неизвестные | Статус |
 |---|---|---|---|---|---|
 | SF-001 | {{FAMILY}} | {{SOURCE}} | {{REQ_IDS}} | {{UNKNOWN_OR_NONE}} | {{CANDIDATE_FAMILY|EXCLUDED_WITH_EVIDENCE|OUT_OF_SCOPE_BY_REQUIREMENT}} |
 
-## Независимый challenge <!-- SSC:CHALLENGE -->
+## Независимая проверка пространства решений <!-- SSC:CHALLENGE -->
 
 {{CHALLENGER_RUN_ACTOR_INPUT_FINDINGS_AND_RESOLUTION_OR_NOT_APPLICABLE_L1}}
 
-## Coverage gate <!-- SSC:GATE -->
+## Полнота пространства решений <!-- SSC:GATE -->
 
 {{COVERAGE_AND_MISSED_FAMILY_STATUS_WITH_BASIS}}
 
 <!-- AC:OPTIONS -->
-| Option ID | Описание/ссылка | Feasibility |
+| ID варианта | Описание/ссылка | Жизнеспособность |
 |---|---|---|
 | OPT-001 | {{DESCRIPTION_OR_LINK}} | {{VIABLE|PLAUSIBLE_PENDING_FEASIBILITY|NOT_VIABLE}} |
 
-## Waivers
+## Согласованные отступления
 
 <!-- AC:WAIVERS -->
-| Waiver ID | Actor ID | Roles | Revision | Approved by | Approved at | Evidence |
+| ID отступления | Actor ID | Роли | Ревизия | Кто разрешил | Дата разрешения | Источник |
 |---|---|---|---|---|---|---|
 
-## Усиленное evidence
+## Дополнительные основания
 
-Для L3 и hard triggers добавь только применимые строки; ссылки допустимы, когда
+Для L3 и жёстких триггеров добавь только применимые строки; ссылки допустимы, когда
 сырой результат действительно нуждается в отдельном файле.
 
-| Область | Модель/процедура | Результат и остаточный риск | Владелец / evidence | Gate |
+| Область | Модель/процедура | Результат и остаточный риск | Владелец / основания | Итог |
 |---|---|---|---|---|
 | {{THREAT_MODEL_OR_MIGRATION_REHEARSAL_OR_RISK_ACCEPTANCE}} | {{METHOD}} | {{RESULT}} | {{OWNER_AND_LINK_OR_INLINE}} | {{PASS|REWORK|BLOCKED|NOT_APPLICABLE}} |
 
 ## Проверка пакета
 
 <!-- AC:PACKAGE_VALIDATION -->
-| Snapshot / команда | Errors | Open gates | Warnings / ручные границы | Status |
+| Снимок / команда | Ошибки | Незакрытые условия | Предупреждения / ручные границы | Статус |
 |---|---:|---:|---|---|
-| {{REVISION_OR_HASH_AND_COMMAND}} | {{COUNT}} | {{COUNT}} | {{DETAILS_OR_NONE}} | {{PASS|FAIL|WARNINGS}} |
+| {{REVISION_AND_COMMAND}} | {{COUNT}} | {{COUNT}} | {{DETAILS_OR_NONE}} | {{PASS|FAIL|WARNINGS}} |
 
-Структурный PASS не доказывает истинность evidence или разрешение реализации.
+Оставь одну актуальную строку. Для PASS первая ячейка содержит текущую ревизию
+(например, `r1; python ...`), ошибки и незакрытые условия равны `0`, статус — `PASS`.
+Все пять ячеек заполнены; отсутствие предупреждений обозначается `—`.
+
+Структурный PASS не доказывает истинность оснований или разрешение реализации.

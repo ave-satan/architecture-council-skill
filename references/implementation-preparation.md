@@ -89,6 +89,9 @@ delivery-plan.md содержит архитектурный roadmap и пере
 шаблона: Task, Increment, Requirements, Dependencies, Status, Blocker,
 Acceptance, Verification, Evidence. В Task — Markdown-ссылка с единственным
 TASK-### в подписи на карточку с названием, scope и необходимыми входами.
+Ссылка ведёт к заголовку карточки именно этого TASK ID; явный HTML-якорь
+непосредственно перед заголовком допустим. Ссылка на чужую карточку или общий
+раздел не определяет задачу.
 Остальные ссылки также оформляй кликабельно; IDs извлекаются из подписей.
 Dependencies — TASK IDs либо `—`. Статусы: PLANNED, READY, BLOCKED, IN_PROGRESS,
 DONE, CANCELLED. Для отсутствующих blocker/evidence используй `—`.

@@ -11,14 +11,14 @@ executed_at: "{{YYYY-MM-DD}}"
 
 # Репетиция миграции
 
-`PLANNED` не означает, что rehearsal разрешена. Изменяющий проект или данные
-прогон требует отдельной явной команды пользователя и disposable scope.
+`PLANNED` не означает, что репетиция разрешена. Изменяющий проект или данные
+прогон требует отдельной явной команды пользователя и изолированной среды.
 
-## Scope и среда
+## Область проверки и среда
 
-- Migration version: {{VERSION}}
-- Dataset shape/size: {{DESCRIPTION}}
-- Environment differences: {{DESCRIPTION}}
+- Версия миграции: {{VERSION}}
+- Структура/объём данных: {{DESCRIPTION}}
+- Отличия среды: {{DESCRIPTION}}
 
 ## Предварительные условия
 
@@ -30,19 +30,19 @@ executed_at: "{{YYYY-MM-DD}}"
 |---|---|---|---:|---|
 | {{STEP}} | {{EXPECTED}} | {{OBSERVED}} | {{DURATION}} | {{PASS/FAIL}} |
 
-## Валидация и reconciliation
+## Валидация и сверка данных
 
-- Record counts/checksums: {{RESULT}}
-- Business invariants: {{RESULT}}
-- Compatibility during transition: {{RESULT}}
+- Количество записей/контрольные суммы: {{RESULT}}
+- Бизнес-инварианты: {{RESULT}}
+- Совместимость во время перехода: {{RESULT}}
 
-## Репетиция rollback
+## Репетиция отката
 
-- Performed: {{yes/no}}
-- Result: {{RESULT}}
-- Data consequences: {{DESCRIPTION}}
+- Выполнено: {{YES_OR_NO}}
+- Результат: {{RESULT}}
+- Последствия для данных: {{DESCRIPTION}}
 
-## Findings и влияние на решение
+## Замечания и влияние на решение
 
 - {{FINDING_OR_NONE}}
 

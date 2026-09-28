@@ -11,7 +11,7 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Целевая архитектура
 
-- Цели / scope / non-goals: {{BR_QA_IDS_AND_CHARTER_LINK}}
+- Цели / границы / исключения: {{BR_QA_IDS_AND_CHARTER_LINK}}
 - Ключевой механизм и границы: {{END_TO_END_SUMMARY}}
 
 ```mermaid
@@ -32,7 +32,7 @@ flowchart LR
 ```mermaid
 %% ac_id: key-flow
 %% ac_state: target
-%% ac_purpose: критический end-to-end сценарий {{SCN_ID}}
+%% ac_purpose: критический сквозной сценарий {{SCN_ID}}
 %% ac_scope: {{SCOPE}}
 %% ac_legend: сплошная стрелка — запрос, пунктирная — ответ
 %% ac_revision: {{REVISION}}
@@ -82,17 +82,17 @@ erDiagram
 
 ## Данные, безопасность и надёжность
 
-| Область | Решение / инвариант | Failure и recovery | Проверка / сигнал |
+| Область | Решение / инвариант | Отказ и восстановление | Проверка / сигнал |
 |---|---|---|---|
 | Данные и консистентность | {{SOR_TRANSACTIONS_IDEMPOTENCY_RETENTION}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
-| Security/privacy | {{TRUST_AUTH_SENSITIVE_DATA_ABUSE}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
-| Performance/reliability | {{BUDGET_AND_MECHANISM}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
-| Operations | {{DEPLOYMENT_LOGS_METRICS_RUNBOOK}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Безопасность/приватность | {{TRUST_AUTH_SENSITIVE_DATA_ABUSE}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Производительность/надёжность | {{BUDGET_AND_MECHANISM}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
+| Эксплуатация | {{DEPLOYMENT_LOGS_METRICS_RUNBOOK}} | {{FAILURE_RECOVERY}} | {{VER_OR_SIG}} |
 
-## Реализация и evidence
+## Реализация и основания
 
-- Изменения / reuse / новые зависимости: {{BOUNDED_CHANGES_AND_JUSTIFICATION}}
-- Переход, rollout и rollback: [delivery-plan.md](delivery-plan.md)
+- Изменения / переиспользование / новые зависимости: {{BOUNDED_CHANGES_AND_JUSTIFICATION}}
+- Переход, выпуск и откат: [delivery-plan.md](delivery-plan.md)
 - Риски и допущения: [requirements.md](requirements.md)
 - ADR только для самостоятельных решений: {{ADR_LINKS_OR_NONE}}
-- No-go evidence и влияние на maturity: {{EVIDENCE_STATUS_AND_LINKS}}
+- Блокирующие неизвестные и влияние на готовность: {{EVIDENCE_STATUS_AND_LINKS}}

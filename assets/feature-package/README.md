@@ -39,7 +39,7 @@ artifact_language: "{{USER_LANGUAGE}}"
 {{ONE_CONCRETE_DECISION_OR_NEXT_ACTION_WITH_CONSEQUENCES}}
 
 <!-- AC:HUMAN_REVIEW -->
-| Дата / кто | Revision | Решение и условия | Источник |
+| Дата / кто | Ревизия | Решение и условия | Источник |
 |---|---|---|---|
 | {{DATE_AND_OWNER_OR_PENDING}} | {{REVISION}} | {{ACTUAL_DECISION_OR_PENDING}} | {{MESSAGE_OR_LINK_OR_PENDING}} |
 
@@ -58,22 +58,23 @@ artifact_language: "{{USER_LANGUAGE}}"
 - Целевая архитектура: [target-architecture.md](target-architecture.md).
 - Поставка и проверки: [delivery-plan.md](delivery-plan.md).
 - Исходные данные: [feature-charter.md](feature-charter.md), {{CURRENT_SYSTEM_OR_SYSTEM_CONTEXT_LINK}}.
-- Аудит процесса: [Council Review](evidence/council-review.md).
+- Основания и выводы совета: [Council Review](evidence/council-review.md).
 
 <!-- AC:README:adrs -->
 
 ADR создаются только для решений с самостоятельным жизненным циклом; их нет,
-если всё нормативное решение помещается в Target и этот README.
+если всё нормативное решение помещается в целевую архитектуру и этот README.
 
 <!-- AC:README:interpretation -->
 
-Требования и Target — нормативные источники; evidence хранит основания и историю.
-Актуальность определяет revision, а не дата открытия файла.
+Требования и целевая архитектура — нормативные источники; evidence хранит только
+основания текущего решения, а историю изменений — Git. Актуальность определяет
+ревизия, а не дата открытия файла.
 
 <!-- AC:README:next -->
 
 Ответь на вопрос из раздела «Решение человека» прямо в задаче.
-Агент запишет ответ в таблицу Human Review этого README.
+Агент запишет ответ в таблицу решения человека этого README.
 
 <!-- AC:README:implementation -->
 

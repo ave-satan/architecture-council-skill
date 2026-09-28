@@ -16,8 +16,8 @@ requested_at: "{{YYYY-MM-DD}}"
 
 {{ONE_CONCRETE_QUESTION}}
 
-Один Human Decision Request не объединяет финансовое, продуктовое, retention,
-legal или risk-решения, если у них разные владельцы или возможные ответы.
+Один запрос решения не объединяет финансовые, продуктовые, правовые вопросы,
+сроки хранения данных и принятие рисков, если у них разные владельцы или возможные ответы.
 
 ## Почему агенты не могут решить вопрос
 
@@ -26,8 +26,8 @@ legal или risk-решения, если у них разные владель
 ## Проверка полноты выбора
 
 - Тип запроса: {{ARCHITECTURE_CHOICE|REQUIREMENT_CLARIFICATION|AUTHORITY_DECISION}}
-- Architecture Options: {{LINK_OR_NOT_APPLICABLE}}
-- Solution Space Coverage Gate: `{{PASS|NOT_APPLICABLE_L1|NOT_APPLICABLE_REQUIREMENT_CLARIFICATION}}`
+- Архитектурные варианты: {{LINK_OR_NOT_APPLICABLE}}
+- Полнота пространства решений: `{{PASS|NOT_APPLICABLE_L1|NOT_APPLICABLE_REQUIREMENT_CLARIFICATION}}`
 - Рассмотренные семейства: {{SF_IDS_OR_NOT_APPLICABLE}}
 - Доказательно исключённые семейства: {{SF_IDS_AND_LINKS_OR_NONE}}
 
@@ -38,31 +38,31 @@ legal или risk-решения, если у них разные владель
 
 ## Вариант A: {{NAME}}
 
-- Consequences: {{CONSEQUENCES}}
-- Risks: {{RISKS}}
-- Cost/timeline: {{IMPACT}}
+- Последствия: {{CONSEQUENCES}}
+- Риски: {{RISKS}}
+- Стоимость/сроки: {{IMPACT}}
 
 ## Вариант B: {{NAME}}
 
-- Consequences: {{CONSEQUENCES}}
-- Risks: {{RISKS}}
-- Cost/timeline: {{IMPACT}}
+- Последствия: {{CONSEQUENCES}}
+- Риски: {{RISKS}}
+- Стоимость/сроки: {{IMPACT}}
 
 ## Рекомендация Council
 
-- Recommended option: {{OPTION}}
-- Rationale: {{RATIONALE}}
-- Confidence: {{high/medium/low}}
+- Рекомендуемый вариант: {{OPTION}}
+- Обоснование: {{RATIONALE}}
+- Уверенность: {{HIGH_MEDIUM_LOW}}
 
-## Заблокированный scope
+## Заблокированная работа
 
-- Blocked: {{WORK}}
-- Can continue: {{WORK_OR_NONE}}
+- Заблокировано: {{WORK}}
+- Можно продолжать: {{WORK_OR_NONE}}
 
 ## Решение
 
-- Selected option: {{OPTION}}
-- Decided by: {{AUTHORIZED_OWNER}}
-- Date: {{YYYY-MM-DD}}
-- Conditions: {{CONDITIONS_OR_NONE}}
-- Normative update: {{REQUIREMENT_ADR_CONSTRAINT_SCOPE_OR_RISK_LINK}}
+- Выбранный вариант: {{OPTION}}
+- Владелец решения: {{AUTHORIZED_OWNER}}
+- Дата: {{YYYY-MM-DD}}
+- Условия: {{CONDITIONS_OR_NONE}}
+- Изменение нормативных документов: {{REQUIREMENT_ADR_CONSTRAINT_SCOPE_OR_RISK_LINK}}

@@ -22,7 +22,7 @@ updated_at: "{{YYYY-MM-DD}}"
 - Позиция: {{POSITION}}
 - Требования: {{REQ_IDS}}
 - Предположения: {{ASM_IDS_OR_STATEMENTS}}
-- Evidence: {{SOURCES}}
+- Основания: {{SOURCES}}
 - Последствия отклонения: {{CONSEQUENCES}}
 
 ### {{PARTICIPANT_B}}
@@ -30,7 +30,7 @@ updated_at: "{{YYYY-MM-DD}}"
 - Позиция: {{POSITION}}
 - Требования: {{REQ_IDS}}
 - Предположения: {{ASM_IDS_OR_STATEMENTS}}
-- Evidence: {{SOURCES}}
+- Основания: {{SOURCES}}
 - Последствия отклонения: {{CONSEQUENCES}}
 
 ## Спорные пункты
@@ -40,16 +40,16 @@ updated_at: "{{YYYY-MM-DD}}"
 ## Путь разрешения
 
 - Тип конфликта: `{{TYPE}}`
-- Требуемое evidence/решение: {{ACTION}}
+- Требуемое подтверждение/решение: {{ACTION}}
 - Владелец: {{OWNER}}
 - Срок: {{DATE_OR_STAGE}}
 
 ## Адресный раунд
 
-- Новое evidence: {{LINK_OR_NONE}}
+- Новое подтверждение: {{LINK_OR_NONE}}
 - Ответ позиции A: {{SUMMARY}}
 - Ответ позиции B: {{SUMMARY}}
-- Консенсус: {{yes/no}}
+- Консенсус: {{YES_OR_NO}}
 
 ## Решение
 

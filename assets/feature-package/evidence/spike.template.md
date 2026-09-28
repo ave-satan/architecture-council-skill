@@ -22,7 +22,7 @@ updated_at: "{{YYYY-MM-DD}}"
 
 {{BRANCH_LINK_OR_LOCAL_SCOPE_AND_TOTAL_BUDGET_INCLUDING_PREPARATION_REVIEW_AND_REPAIRS}}
 
-- Достаточное evidence для решения: {{MINIMUM_DECISION_CHANGING_OBSERVATION}}
+- Достаточное подтверждение для решения: {{MINIMUM_DECISION_CHANGING_OBSERVATION}}
 - Остановиться или сменить семейство: {{STOP_OR_SWITCH_CRITERION}}
 - Почему следующий опыт изменит решение: {{EXPECTED_INFORMATION_GAIN}}
 
@@ -30,10 +30,10 @@ updated_at: "{{YYYY-MM-DD}}"
 
 {{TESTABLE_HYPOTHESIS}}
 
-## Scope и исключения
+## Область проверки и исключения
 
-- Included: {{SCOPE}}
-- Excluded: {{SCOPE}}
+- Включено: {{SCOPE}}
+- Исключено: {{SCOPE}}
 
 ## Метод
 
@@ -59,15 +59,15 @@ updated_at: "{{YYYY-MM-DD}}"
 
 ## Критерии успеха и неопределённости
 
-- Supports hypothesis if: {{CRITERION}}
-- Refutes hypothesis if: {{CRITERION}}
-- Inconclusive if: {{CRITERION}}
+- Гипотеза подтверждена, если: {{CRITERION}}
+- Гипотеза опровергнута, если: {{CRITERION}}
+- Результат неопределён, если: {{CRITERION}}
 
 ## Результат
 
-- Outcome: `{{SUPPORTED|REFUTED|INCONCLUSIVE}}`
-- Evidence: {{LINKS_OUTPUTS}}
-- Limitations: {{LIMITATIONS}}
+- Исход: `{{SUPPORTED|REFUTED|INCONCLUSIVE}}`
+- Подтверждающие материалы: {{LINKS_OUTPUTS}}
+- Ограничения: {{LIMITATIONS}}
 
 ## Влияние на решение
 

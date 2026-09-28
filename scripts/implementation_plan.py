@@ -1,8 +1,8 @@
 """Structural checks for the optional implementation task index."""
 import re
 
-from package_contract import (LINK_RE, REQ_PATTERN, compact_package, frontmatter, heading_ids,
-                              resolve_link, table, text_at, useful)
+from package_contract import (LINK_RE, REQ_PATTERN, compact_package, frontmatter, heading_ids, linked_definition,
+                              resolve_link, table, text_at, useful, without_code)
 
 
 def ids(value, pattern):
@@ -23,7 +23,7 @@ def check_implementation_plan(package, report, required=False, draft=False, temp
     if not compact and not handoff.is_file():
         report.error('Implementation plan: отсутствует implementation-handoff.md')
     text = path.read_text()
-    if text.count('<!-- AC:IMPLEMENTATION_TASKS -->') != 1:
+    if without_code(text).count('<!-- AC:IMPLEMENTATION_TASKS -->') != 1:
         report.error('Implementation plan: нужен один AC:IMPLEMENTATION_TASKS')
     if template or draft:
         return
@@ -55,7 +55,7 @@ def check_implementation_plan(package, report, required=False, draft=False, temp
             allowed = relative == path.relative_to(package) or bool(relative.parts) and relative.parts[0] == 'implementation'
         except ValueError:
             allowed = False
-        if not allowed or not target.is_file() or tid not in heading_ids(target.read_text(), r'TASK-\d{3,}'):
+        if not allowed or not linked_definition(path, LINK_RE.findall(task)[0], tid, r'TASK-\d{3,}'):
             report.error(f'{tid}: ссылка не ведёт к карточке задачи')
         if tid in tasks:
             report.error(f'{tid}: повторный ID задачи')

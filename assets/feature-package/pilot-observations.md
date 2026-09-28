@@ -2,12 +2,12 @@
 architecture_revision: "{{REVISION}}"
 feature: "{{FEATURE_NAME}}"
 artifact: pilot_observations
-protocol_version: "1.5.1"
+protocol_version: "1.5.2"
 artifact_language: "{{USER_LANGUAGE}}"
 updated_at: "{{YYYY-MM-DD}}"
 ---
 
-# Наблюдения dry run
+# Наблюдения пробного прогона
 
 ## Краткий итог
 
@@ -15,19 +15,19 @@ updated_at: "{{YYYY-MM-DD}}"
 
 ## Прохождение стадий
 
-| Stage | Вход | Выход | Gate | Возвраты | Нарушения/waivers |
+| Этап | Вход | Выход | Итог | Возвраты | Нарушения/согласованные отступления |
 |---|---|---|---|---:|---|
 | {{STAGE}} | {{INPUT}} | {{OUTPUT}} | {{STATUS}} | {{N}} | {{NONE_OR_DESCRIPTION}} |
 
 ## Роли и независимость
 
-| Роль | Actor ID | Output | Input revision | Независимость подтверждена |
+| Роль | Actor ID | Вывод | Входная ревизия | Независимость подтверждена |
 |---|---|---|---|---|
 | {{ROLE}} | {{ACTOR_ID}} | {{LINK}} | {{REVISION}} | {{yes/no/waiver}} |
 
-## Refinement и пользовательские вмешательства
+## Доработки и пользовательские вмешательства
 
-| Событие | Причина | Что изменилось | Кто решил | Затраты/turns |
+| Событие | Причина | Что изменилось | Кто решил | Затраты/ходы |
 |---|---|---|---|---|
 | {{EVENT}} | {{REASON}} | {{CHANGE}} | {{OWNER}} | {{VALUE}} |
 

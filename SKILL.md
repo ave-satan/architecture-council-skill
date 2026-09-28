@@ -94,8 +94,8 @@ Before changing an existing package after a material requirement or evidence
 change, run the continuation preflight in the package contract and update only
 the affected current documents. Use repository history for recovery when it is
 available. Never create full package copies, versioned document duplicates,
-`.architecture-council-work`, or archives inside the package. If a non-versioned
-workspace genuinely needs rollback protection, use one temporary sibling backup
+`.architecture-council-work`, or full-package archives inside the package. If a
+non-versioned workspace genuinely needs rollback protection, use one temporary sibling backup
 outside the package and remove it after validation.
 
 ## Enforce the design-only boundary
@@ -350,7 +350,8 @@ End with a concise, self-contained summary in the user's language that states:
   explicitly reviewed this revision;
 - that `implementation_start` remains `NOT_REQUESTED`;
 - the concrete decision or next action relevant now; implementation still
-  requires its own explicit command after architecture approval.
+  requires an actual user command, not architecture approval alone. Preserve
+  any already granted execution scope; do not request the same command again.
 
 Default to one link to the current decision and the one relevant decision or
 next action, normally within 120 words. Explain status in ordinary language;

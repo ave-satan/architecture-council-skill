@@ -539,7 +539,7 @@ The current revision changes the export contract and requires affected reviews.
         impact.unlink()
         archive = package / 'evidence/architecture-v1.tar.gz'
         archive.write_bytes(b'archive')
-        self.assertRejected(self.validate(package=package), 'архивы пакета запрещены')
+        self.assertRejected(self.validate(package=package), 'не связан из Council Review')
         archive.unlink()
         prompt = package / 'evidence/provider-prompt.md'
         prompt.write_text('''---

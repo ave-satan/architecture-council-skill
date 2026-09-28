@@ -13,8 +13,8 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Текущая система
 
-- Scope и источники: {{BOUNDARY_AND_PRIMARY_SOURCES}}
-- Текущий end-to-end flow: {{FLOW}}
+- Границы и источники: {{BOUNDARY_AND_PRIMARY_SOURCES}}
+- Текущий сквозной поток: {{FLOW}}
 - Подтверждённые факты / противоречия: {{FACTS_AND_CONFLICTS}}
 
 ```mermaid
@@ -31,22 +31,22 @@ flowchart LR
 
 ## Поверхности изменения
 
-| Компонент/контракт | Владелец | Текущее поведение и данные | Ограничение/failure mode | Evidence |
+| Компонент/контракт | Владелец | Текущее поведение и данные | Ограничение/режим отказа | Основания |
 |---|---|---|---|---|
 | {{ITEM}} | {{OWNER}} | {{BEHAVIOR}} | {{LIMIT_OR_FAILURE}} | {{LINK}} |
 
-## Runtime, проверки и эксплуатация
+## Исполнение, проверки и эксплуатация
 
-| Область | Наблюдаемое состояние | Evidence / неизвестность | Follow-up и владелец |
+| Область | Наблюдаемое состояние | Основания / неизвестность | Следующее действие и владелец |
 |---|---|---|---|
-| Deployment / config | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
-| Tests / contracts | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
-| Logs / metrics / recovery | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
+| Развёртывание / конфигурация | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
+| Тесты / контракты | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
+| Логи / метрики / восстановление | {{STATE}} | {{LINK_OR_UNKNOWN}} | {{ACTION}} |
 
-- Blast radius: {{COMPONENTS_CONTRACTS_DATA_TESTS_OPERATIONS}}
-- Discovery gate: `{{PASS|REWORK|BLOCKED}}`; {{RATIONALE}}
+- Область воздействия: {{COMPONENTS_CONTRACTS_DATA_TESTS_OPERATIONS}}
+- Итог исследования: `{{PASS|REWORK|BLOCKED}}`; {{RATIONALE}}
 
 <!-- AC:CODE_EVIDENCE -->
-| Claim ID | Repo-relative path | Revision | Start | End |
+| ID утверждения | Путь от корня репозитория | Ревизия | Начальная строка | Конечная строка |
 |---|---|---|---:|---:|
 | {{CLAIM_ID}} | {{PATH}} | {{FULL_COMMIT_SHA_OR_WORKTREE_SHA256}} | {{START}} | {{END}} |

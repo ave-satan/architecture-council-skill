@@ -5,9 +5,11 @@ import hashlib
 import json
 import re
 import subprocess
+import tarfile
+import zipfile
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote
 
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]+\}\}")
@@ -90,7 +92,19 @@ def selected_roles(package: Path, cli_roles=None) -> set[str]:
 
 
 def without_code(text: str) -> str:
-    return re.sub(r"^\s*(```|~~~).*?^\s*\1\s*$", "", text, flags=re.S | re.M)
+    lines, fence = [], None
+    for line in text.splitlines(keepends=True):
+        block = re.match(r'^ {0,3}(`{3,}|~{3,})(.*)$', line.rstrip('\r\n'))
+        if fence:
+            if block and block[1][0] == fence[0] and len(block[1]) >= fence[1] and not block[2].strip():
+                fence = None
+            lines.append('\n' if line.endswith('\n') else '')
+        elif block:
+            fence = (block[1][0], len(block[1]))
+            lines.append('\n' if line.endswith('\n') else '')
+        else:
+            lines.append(line)
+    return ''.join(lines)
 
 
 def cells(line: str) -> list[str]:
@@ -99,6 +113,7 @@ def cells(line: str) -> list[str]:
 
 def table(text: str, marker: str) -> list[list[str]]:
     """Read first table after a stable marker, excluding the localized header."""
+    text = without_code(text)
     token = f"<!-- {marker} -->"
     if text.count(token) != 1:
         return []
@@ -120,19 +135,87 @@ def heading_ids(text: str, pattern: str) -> set[str]:
     return {m[1] for m in re.finditer(r"^#{1,6}\s+[^\n]*?\b(" + pattern + r")\b", without_code(text), re.M)}
 
 
+def heading_slug(title: str) -> str:
+    title = re.sub(r"<!--.*?-->", "", title).strip()
+    title = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", title)
+    title = re.sub(r"<[^>]*>", "", title).casefold()
+    return re.sub(r"[^\w\- ]", "", title).replace(" ", "-")
+
+
 def markdown_anchors(text: str) -> set[str]:
     text = without_code(text)
     anchors = set(re.findall(r'<a\s+(?:id|name)=["\']([^"\']+)["\']', text))
     occurrences = defaultdict(int)
     for title in re.findall(r"^#{1,6}\s+(.+?)\s*#*\s*$", text, re.M):
-        title = re.sub(r"<!--.*?-->", "", title).strip()
-        title = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", title)
-        title = re.sub(r"<[^>]*>", "", title).casefold()
-        slug = re.sub(r"[^\w\- ]", "", title).replace(" ", "-")
+        slug = heading_slug(title)
         n = occurrences[slug]
         anchors.add(slug if n == 0 else f"{slug}-{n}")
         occurrences[slug] += 1
     return anchors
+
+
+def markdown_sections(text: str) -> dict[str, tuple[str, str] | None]:
+    """Resolve generated/explicit anchors to their heading and bounded body.
+
+    An explicit anchor immediately before a heading belongs to that section.
+    Fenced examples and neighboring contract tables are not section outputs.
+    Duplicate explicit anchors are ambiguous, rather than last-write-wins.
+    """
+    lines = text.splitlines()
+    headings, boundaries, pending = [], [], []
+    occurrences = defaultdict(int)
+    fence = None
+    for index, line in enumerate(lines):
+        block = re.match(r"^\s*(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            if block and block[1][0] == fence[0] and len(block[1]) >= fence[1] and not block[2].strip():
+                fence = None
+            continue
+        if block:
+            fence = (block[1][0], len(block[1]))
+            pending = []
+            continue
+        anchors = re.findall(r'<a\s+(?:id|name)=["\']([^"\']+)["\'][^>]*>\s*</a>', line)
+        heading = re.match(r"^(#{1,6})\s+(.+?)\s*#*\s*$", line)
+        if heading:
+            title = heading[2]
+            slug = heading_slug(title)
+            n = occurrences[slug]
+            occurrences[slug] += 1
+            keys = [slug if n == 0 else f"{slug}-{n}", *[a for _, a in pending], *anchors]
+            start = pending[0][0] if pending else index
+            headings.append((start, index, len(heading[1]), title, set(keys)))
+            pending = []
+        elif anchors and not re.sub(r'<a\b[^>]*>\s*</a>', '', line).strip():
+            pending.extend((index, anchor) for anchor in anchors)
+        elif line.strip():
+            pending = []
+        if re.match(r"^<!-- (?:AC|SSC):[^>]+ -->", line):
+            boundaries.append(index)
+    sections = {}
+    for start, index, level, title, anchors in headings:
+        run_ids = set(re.findall(r'\bRUN-\d{3,}\b', title))
+        end = next((s for s, _, depth, next_title, _ in headings if s > index
+                    and (depth <= level or set(re.findall(r'\bRUN-\d{3,}\b', next_title)) - run_ids)), len(lines))
+        end = min([end, *[b for b in boundaries if index < b < end]])
+        body = '\n'.join(lines[index + 1:end])
+        for anchor in anchors:
+            sections[anchor] = None if anchor in sections else (title, body)
+    return sections
+
+
+def linked_definition(source: Path, raw: str, expected: str, pattern: str) -> bool:
+    """The destination heading must define the ID in the link's label."""
+    target, fragment, bounds = resolve_link(source, raw)
+    if not target.is_file() or target.suffix != '.md':
+        return False
+    text = target.read_text(encoding='utf-8')
+    if fragment:
+        section = markdown_sections(text).get(fragment)
+        return bool(section and heading_ids('# ' + section[0], pattern) == {expected})
+    if bounds:
+        text = '\n'.join(text.splitlines()[bounds[0] - 1:bounds[1]])
+    return heading_ids(text, pattern) == {expected}
 
 
 def resolve_link(source: Path, raw: str) -> tuple[Path, str, tuple[int, int] | None]:
@@ -190,7 +273,7 @@ def check_links(package, report, template_mode, allow_missing_render):
 def check_readme(package, language, report, template_mode):
     text = text_at(package, "README.md")
     for marker in README_MARKERS:
-        if text.count(f"<!-- AC:README:{marker} -->") != 1:
+        if without_code(text).count(f"<!-- AC:README:{marker} -->") != 1:
             report.error(f"README: отсутствует уникальный marker AC:README:{marker}")
     if template_mode:
         return
@@ -210,7 +293,7 @@ def is_na(value: str) -> bool:
 
 def check_traceability(package, report, template_mode=False):
     req_text = text_at(package, "requirements.md")
-    if "<!-- AC:TRACEABILITY -->" not in req_text:
+    if "<!-- AC:TRACEABILITY -->" not in without_code(req_text):
         report.error("Requirements: отсутствует marker AC:TRACEABILITY")
     if template_mode:
         return
@@ -239,6 +322,8 @@ def check_traceability(package, report, template_mode=False):
             destination, _, _ = resolve_link(package / 'requirements.md', linked_req[2])
             if destination != (package / 'requirements.md').resolve():
                 report.error(f'Traceability {req}: Requirement link должен вести в requirements.md')
+            elif not linked_definition(package / 'requirements.md', linked_req[2], req, REQ_PATTERN):
+                report.error(f'Traceability {req}: ссылка не ведёт на определение этого требования')
         observed.add(req)
         if req not in definitions:
             report.error(f"Traceability: неизвестное требование {req}")
@@ -281,13 +366,41 @@ def role_runs(package):
     return table(text_at(package, "process-ledger.md"), "AC:ROLE_RUNS")
 
 
-def output_path(package, value):
+def output_reference(package, value):
     links = LINK_RE.findall(value)
     raw = links[0] if len(links) == 1 else value.strip('`')
     if re.match(r"^[A-Za-z][\w+.-]*://", raw):
         return None
-    path, _, _ = resolve_link(artifact_path(package, "process-ledger.md"), raw)
-    return path if path.is_relative_to(package.resolve()) and path.is_file() else None
+    path, fragment, bounds = resolve_link(artifact_path(package, "process-ledger.md"), raw)
+    return (path, fragment, bounds) if path.is_relative_to(package.resolve()) and path.is_file() else None
+
+
+def output_path(package, value):
+    reference = output_reference(package, value)
+    return reference[0] if reference else None
+
+
+def section_output(package, run):
+    """Bind a section output to the run whose actor/input the ledger records."""
+    reference = output_reference(package, run[5])
+    if not reference:
+        return False
+    path, fragment, bounds = reference
+    if bounds or path.suffix != '.md':
+        return False
+    sections = markdown_sections(path.read_text(encoding='utf-8'))
+    if fragment:
+        section = sections.get(fragment)
+    elif path != artifact_path(package, 'process-ledger.md').resolve():
+        candidates = {section for section in sections.values() if section
+                      and heading_ids('# ' + section[0], r'RUN-\d{3,}') == {run[0]}}
+        section = next(iter(candidates)) if len(candidates) == 1 else None
+    else:
+        return False
+    if not section or heading_ids('# ' + section[0], r'RUN-\d{3,}') != {run[0]}:
+        return False
+    body = re.sub(r'<!--.*?-->|<a\b[^>]*>\s*</a>|^#{1,6}\s+[^\n]*$', '', section[1], flags=re.S | re.M)
+    return useful(body)
 
 
 def waiver_for(package, actor, roles, revision, report):
@@ -351,7 +464,7 @@ def check_roles(package, roles, report, template_mode):
         if run[6] != "PASS":
             report.error(f"Role Runs {run[0]}: последний результат должен быть PASS")
         path = output_path(package, run[5])
-        if path is None or not useful(re.sub(r"\A---.*?\n---", "", path.read_text(), count=1, flags=re.S)):
+        if path is None or (not compact and not useful(re.sub(r"\A---.*?\n---", "", path.read_text(), count=1, flags=re.S))):
             report.error(f"Role Runs {run[0]}: отсутствует непустой output")
         else:
             meta = frontmatter(path.read_text())
@@ -359,7 +472,14 @@ def check_roles(package, roles, report, template_mode):
                 report.error(f"Role Runs {run[0]}: output относится к другой revision")
             if role == 'arbiter' and meta.get('council_recommendation') != readme.get('council_recommendation'):
                 report.error(f'Role Runs {run[0]}: рекомендация арбитра не совпадает с итогом пакета')
-            if not compact and (role in {"arbiter", "red_team", "alternative_architect"}
+            if compact:
+                if not section_output(package, run):
+                    report.error(f'Role Runs {run[0]}: нужна непустая секция с заголовком этого run_id')
+                if path != artifact_path(package, 'process-ledger.md').resolve():
+                    for key, value in (("run_id", run[0]), ("actor_id", run[3]), ("input_revision", run[4])):
+                        if key in meta and meta[key] != value:
+                            report.error(f'Role Runs {run[0]}: {key} output не совпадает с ledger')
+            elif (role in {"arbiter", "red_team", "alternative_architect"}
                                 or path.parent.name == "specialist-reviews"):
                 for key, value in (("run_id", run[0]), ("actor_id", run[3]), ("input_revision", run[4])):
                     if meta.get(key) != value:
@@ -381,7 +501,7 @@ def check_solution_space_coverage(package, level, report, template_mode):
         return
     text = text_at(package, "evidence/architecture-options.md")
     for marker in ("SSC:MAP", "SSC:FAMILIES", "SSC:CHALLENGE", "SSC:GATE"):
-        if text.count(f"<!-- {marker} -->") != 1:
+        if without_code(text).count(f"<!-- {marker} -->") != 1:
             report.error(f"Architecture Options: отсутствует уникальный marker {marker}")
     if template_mode:
         return
@@ -395,15 +515,30 @@ def check_solution_space_coverage(package, level, report, template_mode):
         report.gate("Coverage: нет завершённого Solution Space Challenger run")
     elif (meta.get("coverage_challenger_actor_id") != matches[0][3]
           or meta.get("coverage_input_revision") != matches[0][4]
-          or output_path(package, matches[0][5]) != artifact_path(package, "evidence/architecture-options.md").resolve()):
+          or output_path(package, matches[0][5]) != artifact_path(package, "evidence/architecture-options.md").resolve()
+          or compact_package(package) and not section_output(package, matches[0])):
         report.error("Coverage: actor/input/output не совпадают с challenger run")
     families = table(text, "SSC:FAMILIES")
     if not families or any(len(row) != 6 or not all(useful(x) for x in row) for row in families):
         report.error("Coverage: нужны заполненные строки семейств (6 колонок)")
-    if not table(text, "AC:OPTIONS"):
+    options = table(text, "AC:OPTIONS")
+    if not options:
         report.error("Coverage: отсутствуют варианты AC:OPTIONS")
-    elif not any(len(row) >= 3 and row[2] == "VIABLE" for row in table(text, "AC:OPTIONS")):
-        report.gate("Coverage: нет VIABLE кандидата; используй draft для незавершённого evidence")
+    else:
+        option_ids = set()
+        viable = False
+        for row in options:
+            if (len(row) != 3 or not all(useful(value) for value in row)
+                    or not re.fullmatch(r'OPT-[\w.-]+', row[0])
+                    or row[2] not in {'VIABLE', 'PLAUSIBLE_PENDING_FEASIBILITY', 'NOT_VIABLE'}):
+                report.error('Coverage: AC:OPTIONS требует 3 заполненные колонки, OPT ID и допустимый feasibility')
+                continue
+            if row[0] in option_ids:
+                report.error(f'Coverage: повторный Option ID {row[0]}')
+            option_ids.add(row[0])
+            viable |= row[2] == 'VIABLE'
+        if not viable:
+            report.gate("Coverage: нет VIABLE кандидата; используй draft для незавершённого evidence")
 
 
 def check_status_consistency(package, report, template_mode):
@@ -420,9 +555,9 @@ def check_status_consistency(package, report, template_mode):
         readme_text = text_at(package, "README.md")
         legacy_decision = package / "decision-brief.md"
         human_review_text = readme_text
-        if readme_text.count("<!-- AC:HUMAN_REVIEW -->") != 1 and legacy_decision.is_file():
+        if without_code(readme_text).count("<!-- AC:HUMAN_REVIEW -->") != 1 and legacy_decision.is_file():
             human_review_text = legacy_decision.read_text(encoding="utf-8")
-        if human_review_text.count("<!-- AC:HUMAN_REVIEW -->") != 1 or not table(human_review_text, "AC:HUMAN_REVIEW"):
+        if without_code(human_review_text).count("<!-- AC:HUMAN_REVIEW -->") != 1 or not table(human_review_text, "AC:HUMAN_REVIEW"):
             report.error("README: отсутствует запись AC:HUMAN_REVIEW")
     for path in sorted(package.glob("*.md")) + sorted((package / "adr").glob("*.md")):
         if ".template." in path.name or path.name.endswith("-template.md"):
@@ -473,8 +608,70 @@ def check_current_validation(package, report, template_mode, review_phase=True,
     if compact_package(package):
         text = text_at(package, "evidence/package-validation.md")
         rows = table(text, "AC:PACKAGE_VALIDATION")
-        if text.count("<!-- AC:PACKAGE_VALIDATION -->") != 1 or len(rows) != 1:
+        if without_code(text).count("<!-- AC:PACKAGE_VALIDATION -->") != 1:
+            report.error('Council Review: нужен уникальный marker AC:PACKAGE_VALIDATION')
+            return
+        if validation_candidate:
+            return  # This invocation computes the result; it cannot require that result beforehand.
+        if len(rows) != 1:
             report.error("Council Review: нужна ровно одна актуальная строка AC:PACKAGE_VALIDATION")
+            return
+        row = rows[0]
+        if len(row) != 5:
+            report.error('AC:PACKAGE_VALIDATION: ожидается 5 заполненных колонок')
+            return
+        snapshot, errors, gates, warnings, status = row
+        snapshot_revision = snapshot.split(';', 1)[0].strip().strip('`')
+        snapshot_revision = re.sub(r'^revision\s*=\s*', '', snapshot_revision)
+        if not useful(revision) or snapshot_revision != revision:
+            report.error('AC:PACKAGE_VALIDATION: Snapshot не относится к текущей revision')
+        if not re.fullmatch(r'0+', errors) or not re.fullmatch(r'0+', gates) or status != 'PASS':
+            report.error('AC:PACKAGE_VALIDATION: PASS требует ноль Errors, ноль Open gates и Status PASS')
+        if not warnings.strip() or PLACEHOLDER_RE.search(warnings):
+            report.error('AC:PACKAGE_VALIDATION: заполни Warnings / ручные границы либо укажи None')
+
+
+def without_validation_record(text):
+    """Exclude only the result table when computing a validation candidate."""
+    marker = '<!-- AC:PACKAGE_VALIDATION -->'
+    visible = without_code(text)
+    if visible.count(marker) != 1:
+        return text
+    lines = text.splitlines(keepends=True)
+    marker_line = next(i for i, line in enumerate(visible.splitlines()) if marker in line)
+    before, lines = ''.join(lines[:marker_line + 1]), lines[marker_line + 1:]
+    kept, started, finished = [], False, False
+    for line in lines:
+        if not finished and line.lstrip().startswith('|'):
+            started = True
+            continue
+        if started or line.strip() and not line.lstrip().startswith('|'):
+            finished = True
+        kept.append(line)
+    return before + ''.join(kept)
+
+
+def archive_contains_package(path, report):
+    """Inspect member names only; never unpack provider evidence into the workspace."""
+    try:
+        if path.name.casefold().endswith('.zip'):
+            with zipfile.ZipFile(path) as archive:
+                names = archive.namelist()
+        elif path.name.casefold().endswith(('.tar', '.tar.gz', '.tgz')):
+            with tarfile.open(path, 'r:*') as archive:
+                names = [member.name for member in archive if member.isfile()]
+        else:
+            report.warn(f'{path.name}: формат архива не проверен; вручную исключи копию архитектурного пакета')
+            return False
+    except (OSError, ValueError, zipfile.BadZipFile, tarfile.TarError) as exc:
+        report.error(f'{path.name}: нельзя проверить содержимое архива: {exc}')
+        return False
+    directories = defaultdict(set)
+    for name in names:
+        member = PurePosixPath(name.replace('\\', '/'))
+        directories[str(member.parent)].add(member.name)
+    core = {'README.md', 'feature-charter.md', 'requirements.md', 'target-architecture.md', 'delivery-plan.md'}
+    return any(core <= files for files in directories.values())
 
 
 def check_evidence_hygiene(package, report, template_mode=False):
@@ -491,20 +688,27 @@ def check_evidence_hygiene(package, report, template_mode=False):
     archive_suffixes = (".tar", ".tar.gz", ".tgz", ".zip", ".7z")
     for path in package.rglob("*"):
         if path.is_file() and path.name.casefold().endswith(archive_suffixes):
-            report.error(f"{path.relative_to(package)}: архивы пакета запрещены")
+            if not path.is_relative_to(evidence):
+                report.error(f'{path.relative_to(package)}: архивы вне evidence запрещены')
+            elif path.resolve() in linked and archive_contains_package(path, report):
+                report.error(f"{path.relative_to(package)}: архивы пакета запрещены")
     if not evidence.is_dir():
         return
-    for path in evidence.rglob("*.md"):
-        if path == council or ".template." in path.name:
+    for path in evidence.rglob("*"):
+        if not path.is_file() or path == council or (path.suffix == '.md' and ".template." in path.name):
             continue
         name = path.name.casefold()
         if name == "revision-impact.md":
             report.error("evidence/revision-impact.md запрещён; обновляй текущие документы")
             continue
-        if name.startswith("council-review") or re.match(r"(?:review|.*-review)(?:[-_].*)?\.md$", name):
-            report.error(f"{path.relative_to(package)}: versioned или отдельные review-файлы запрещены")
+        text = path.read_text(encoding='utf-8') if path.suffix == '.md' else ''
+        meta = frontmatter(text)
+        approval = meta.get('status') == 'APPROVED' and useful(meta.get('approved_by', '')) and useful(meta.get('approved_at', ''))
+        council_copy = 'selected_roles' in meta or bool(table(text, 'AC:ROLE_RUNS'))
+        if name.startswith("council-review") and (not approval or council_copy):
+            report.error(f"{path.relative_to(package)}: versioned-копии Council Review запрещены")
             continue
-        if frontmatter(path.read_text(encoding="utf-8")).get("status") == "SUPERSEDED":
+        if meta.get("status") == "SUPERSEDED":
             report.error(f"{path.relative_to(package)}: superseded evidence должен оставаться в Git")
             continue
         if path.resolve() not in linked:
@@ -540,7 +744,7 @@ def check_classification(package, level, context, roles, report, template_mode):
         report.error("Classification selected_roles не совпадают с ledger/CLI")
     if compact_package(package):
         text = text_at(package, "feature-classification.md")
-        if text.count("<!-- AC:CLASSIFICATION -->") != 1 or not table(text, "AC:CLASSIFICATION"):
+        if without_code(text).count("<!-- AC:CLASSIFICATION -->") != 1 or not table(text, "AC:CLASSIFICATION"):
             report.error("Feature Charter: отсутствует секция AC:CLASSIFICATION")
 
 
@@ -628,7 +832,7 @@ def check_evidence_locations(package, context, report):
         if not path.is_file():
             continue
         text = path.read_text()
-        if "<!-- AC:CODE_EVIDENCE -->" not in text:
+        if "<!-- AC:CODE_EVIDENCE -->" not in without_code(text):
             continue
         rows = table(text, "AC:CODE_EVIDENCE")
         meta = frontmatter(text)

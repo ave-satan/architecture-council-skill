@@ -14,7 +14,7 @@ from implementation_plan import check_implementation_plan
 from package_contract import (frontmatter, selected_roles, check_links, check_readme,
     check_status_consistency, check_traceability, check_roles, check_solution_space_coverage,
     check_diagrams, check_evidence_locations, check_classification, check_current_validation,
-    check_evidence_hygiene, compact_package, mandatory_roles)
+    check_evidence_hygiene, compact_package, mandatory_roles, without_validation_record)
 
 
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]+\}\}")
@@ -104,13 +104,16 @@ def check_required_files(
             report.error(f"Отсутствует обязательный артефакт: {path.relative_to(package)}")
 
 
-def check_placeholders(package: Path, report: Report, template_mode: bool) -> None:
+def check_placeholders(package: Path, report: Report, template_mode: bool, validation_candidate=False) -> None:
     if template_mode:
         return
     for path in package.rglob("*"):
         if path.suffix not in {".md", ".mmd", ".yaml", ".yml"} or ".template." in path.name:
             continue
-        if PLACEHOLDER_RE.search(read_text(path)):
+        text = read_text(path)
+        if validation_candidate and compact_package(package) and path == package / 'evidence/council-review.md':
+            text = without_validation_record(text)
+        if PLACEHOLDER_RE.search(text):
             report.error(f"Остались placeholders: {path.relative_to(package)}")
 
 
@@ -198,7 +201,7 @@ def main() -> int:
 
     if args.template_mode or args.phase == "review":
         check_required_files(package, flat, nested, args.level, args.context, roles | mandatory_roles(args.level, args.context), report)
-        check_placeholders(package, report, args.template_mode)
+        check_placeholders(package, report, args.template_mode, args.validation_candidate)
         check_readme(package, args.language, report, args.template_mode)
         check_status_consistency(package, report, args.template_mode)
         check_traceability(package, report, args.template_mode)

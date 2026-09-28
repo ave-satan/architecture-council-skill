@@ -24,19 +24,19 @@ superseded_by: null
 
 ### {{OPTION_A}}
 
-- Advantages: {{ADVANTAGES}}
-- Disadvantages: {{DISADVANTAGES}}
-- Risks: {{RISKS}}
-- Decision: {{SELECTED_OR_REASON_REJECTED}}
+- Преимущества: {{ADVANTAGES}}
+- Недостатки: {{DISADVANTAGES}}
+- Риски: {{RISKS}}
+- Решение: {{SELECTED_OR_REASON_REJECTED}}
 
 ### {{OPTION_B}}
 
-- Advantages: {{ADVANTAGES}}
-- Disadvantages: {{DISADVANTAGES}}
-- Risks: {{RISKS}}
-- Decision: {{SELECTED_OR_REASON_REJECTED}}
+- Преимущества: {{ADVANTAGES}}
+- Недостатки: {{DISADVANTAGES}}
+- Риски: {{RISKS}}
+- Решение: {{SELECTED_OR_REASON_REJECTED}}
 
-## Consequences
+## Последствия
 
 ### Положительные
 

@@ -10,13 +10,13 @@ updated_at: "{{YYYY-MM-DD}}"
 
 # Модель угроз
 
-## Scope и активы
+## Область анализа и активы
 
-- Protected assets: {{DATA_MONEY_IDENTITY_AVAILABILITY}}
-- In scope: {{COMPONENTS_FLOWS}}
-- Out of scope: {{EXCLUSIONS_AND_OWNER}}
+- Защищаемые активы: {{DATA_MONEY_IDENTITY_AVAILABILITY}}
+- В области анализа: {{COMPONENTS_FLOWS}}
+- Вне области анализа: {{EXCLUSIONS_AND_OWNER}}
 
-## Акторы и trust boundaries
+## Акторы и границы доверия
 
 {{DESCRIPTION_AND_LINK_TO_TRUST_BOUNDARY_DIAGRAM}}
 
@@ -28,7 +28,7 @@ updated_at: "{{YYYY-MM-DD}}"
 
 ## Угрозы
 
-| ID | Угроза/abuse case | Условия | Влияние | Текущая защита | Требуемая защита | Проверка | Статус |
+| ID | Угроза/злоупотребление | Условия | Влияние | Текущая защита | Требуемая защита | Проверка | Статус |
 |---|---|---|---|---|---|---|---|
 | THR-001 | {{THREAT}} | {{PRECONDITIONS}} | {{IMPACT}} | {{CONTROL}} | {{CONTROL}} | {{VER_ID}} | {{STATUS}} |
 
@@ -37,11 +37,11 @@ updated_at: "{{YYYY-MM-DD}}"
 - {{RISK_ID_FROM_RISKS_AND_ASSUMPTIONS_OR_NONE}}
 
 Используй только нормативные `RISK-NNN` из
-[Requirements: risks and assumptions](../requirements.md); локальные сокращения и
-переопределение risk ID запрещены.
+[требований: риски и допущения](../requirements.md); локальные сокращения и
+переопределение ID риска запрещены.
 
-## Решение Security reviewer
+## Решение специалиста по безопасности
 
-- Status: {{NO_OBJECTION|CHANGES_REQUIRED|BLOCKING_CONFLICT}}
-- Reviewer: {{OWNER}}
-- Evidence: {{LINKS}}
+- Статус: {{NO_OBJECTION|CHANGES_REQUIRED|BLOCKING_CONFLICT}}
+- Рецензент: {{OWNER}}
+- Основания: {{LINKS}}
