@@ -155,6 +155,11 @@ preference. Do not turn a preferred recovery or operating policy into a requirem
 
 Use the evidence sufficiency rules in protocol Stage 4, subsection 4.2: documented capabilities,
 environment assumptions and future implementation acceptance are different claims.
+Apply its [verification and acceptance rules](references/protocol.md#проверки-и-приёмка)
+when writing requirements, plans and task cards: source-backed facts stay inputs;
+checks cover new behavior or a concrete unresolved claim. Reuse one applicable
+result across requirements and stages. Additional conditions or reruns need a
+distinct outcome, failure mode or a relevant change that can invalidate it.
 An unrun integration test is not automatically a design blocker. Before blocking,
 name the decision-changing unknown and the smallest dependent scope; continue
 available research and conditional design. Preserve genuine no-go gates and never
