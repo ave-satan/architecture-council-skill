@@ -1,4 +1,4 @@
 interface:
   display_name: "Architecture Council"
-  short_description: "Проектирование больших фич через независимый review"
-  default_prompt: "Используй $architecture-council, чтобы спроектировать большую фичу и подготовить Architecture Package для человеческого review."
+  short_description: "Лёгкие спецификации фич и полный архитектурный разбор"
+  default_prompt: "Используй $architecture-council, чтобы спроектировать фичу с учётом существующего проекта, выбрать подходящую глубину и подготовить спецификацию или Architecture Package."
