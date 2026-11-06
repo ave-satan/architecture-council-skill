@@ -45,6 +45,36 @@ edits need the project's coding workflow, not a design exercise.
 
 ## Shared boundaries
 
+### Writing style: ASD-STE100
+
+Apply ASD-STE100-style technical writing in every mode. This applies to all
+agent-authored artifacts, documentation, reviews, questions, delegation prompts,
+inter-agent messages and handoffs, including intermediate outputs.
+Keep the language selected by the existing language rules below. Do not switch
+to English to satisfy the style rule. For other languages, adapt the clarity
+principles; do not claim formal ASD-STE100 compliance. For English, use its
+writing rules and controlled vocabulary where applicable. This compact policy
+is not a replacement for the [official standard](https://www.asd-ste100.org/assets/files/ASD-STE100_ISSUE9.pdf)
+or evidence of full compliance.
+
+- Use short, complete sentences with one topic. Give one action per instruction.
+- Use direct verbs and active voice. Name the actor when responsibility matters.
+- Use one consistent term for each concept. Explain unfamiliar technical terms.
+- State conditions, actions and results explicitly. Avoid ambiguous references.
+- Remove idioms, metaphors, filler and unnecessary synonyms. Do not remove
+  necessary words, qualifications, risks or evidence to make the text shorter.
+- Separate instructions from descriptions. Use ordered steps for a sequence.
+- Preserve exact identifiers, commands, schemas, machine markers and quotations.
+  Apply the style to the surrounding prose, not to external contracts or raw logs.
+
+Include this policy and the selected language in every delegated assignment,
+including nested delegation. Before sending a message or handing off a document,
+check its clarity and terminology. Correct the text in place; do not create a
+style report, approval gate or additional artifact. On continuation, apply the
+policy to new and revised text without rewriting unrelated historical records.
+
+### Language and authority
+
 - Keep ordinary prose, questions, headings, table and diagram labels in the user's
   language. Preserve exact identifiers, paths, API/model names and technical terms
   where needed, not surrounding English prose.
