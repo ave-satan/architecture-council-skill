@@ -47,9 +47,11 @@ edits need the project's coding workflow, not a design exercise.
 
 ### Writing style: ASD-STE100
 
-Apply ASD-STE100-style technical writing in every mode. This applies to all
-agent-authored artifacts, documentation, reviews, questions, delegation prompts,
-inter-agent messages and handoffs, including intermediate outputs.
+Apply ASD-STE100-style technical writing to user-facing output in every mode:
+responses, progress updates, questions, documentation, reviews and artifacts
+intended for the user. Internal agent communication, delegation prompts,
+working notes and internal handoffs have no style requirement under this policy.
+Before presenting internal material to the user, adapt its prose to this policy.
 Keep the language selected by the existing language rules below. Do not switch
 to English to satisfy the style rule. For other languages, adapt the clarity
 principles; do not claim formal ASD-STE100 compliance. For English, use its
@@ -67,9 +69,10 @@ or evidence of full compliance.
 - Preserve exact identifiers, commands, schemas, machine markers and quotations.
   Apply the style to the surrounding prose, not to external contracts or raw logs.
 
-Include this policy and the selected language in every delegated assignment,
-including nested delegation. Before sending a message or handing off a document,
-check its clarity and terminology. Correct the text in place; do not create a
+When delegating user-facing deliverables, pass this output policy and the selected
+language to their authors, including nested delegation. Do not impose the policy
+on their internal exchanges. Before sending user-facing output, check its clarity
+and terminology. Correct the text in place; do not create a
 style report, approval gate or additional artifact. On continuation, apply the
 policy to new and revised text without rewriting unrelated historical records.
 
