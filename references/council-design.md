@@ -259,22 +259,45 @@ last edit to Charter, Requirements, or Context/Dossier, run:
 python3 <skill-dir>/scripts/record_classification.py <package-directory>
 ```
 
-Before Human Review, run:
+Before Human Review, validate the candidate first. Use the package's actual
+level, context, language and roles in both commands below:
 
 ```bash
 python3 <skill-dir>/scripts/validate_package.py <package-directory> \
   --level L2 \
   --context brownfield \
   --language ru \
-  --roles domain_architect,implementation_maintainability
+  --roles domain_architect,implementation_maintainability \
+  --phase review --validation-candidate
 ```
+
+Resolve candidate errors before recording PASS. A successful candidate is not
+handoff readiness. After it succeeds, update Council Review for the current
+`architecture_revision`: set `package_validation_status: PASS` and replace
+`AC:PACKAGE_VALIDATION` with one current result row. Record the revision and
+command, errors, open gates, warnings/manual limits and status according to the
+[package contract](package-contract.md). Do not invent a successful result.
+
+Then run the ordinary review check without `--validation-candidate`:
+
+```bash
+python3 <skill-dir>/scripts/validate_package.py <package-directory> \
+  --level L2 \
+  --context brownfield \
+  --language ru \
+  --roles domain_architect,implementation_maintainability \
+  --phase review
+```
+
+Resolve any review errors before handoff. If corrections change the validated
+package, repeat candidate → record the current result → review.
 
 Use `--phase draft` for an incomplete or BLOCKED package; its success is not
 readiness for handoff. A documented waiver produces a warning, not fake
 independence.
 
-Resolve validation errors. Record warnings and actual evidence gaps in the
-`AC:PACKAGE_VALIDATION` section of Council Review. Native editor rendering of inline Mermaid is
+Keep warnings and actual evidence gaps in the current validation result.
+Native editor rendering of inline Mermaid is
 the assumed display path, not an additional verification task for the user.
 
 ## Keep continuation bounded
